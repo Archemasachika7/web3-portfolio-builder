@@ -8,6 +8,7 @@ import ResumeSection from "@/components/ResumeSection";
 import ContactSection from "@/components/ContactSection";
 import AdminPanel, { type Project as AdminProject } from "@/components/AdminPanel";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 type Mode = "ai" | "ce";
 
@@ -221,6 +222,9 @@ export default function Page() {
             >
               {showAdmin ? "Hide Admin" : "Admin"}
             </Button>
+            <Button asChild variant="ghost" size="sm" className="ml-1">
+              <Link href="/login">Login</Link>
+            </Button>
           </nav>
           <div className="md:hidden">
             <Button
@@ -244,6 +248,7 @@ export default function Page() {
           onExploreAIMode={handleExploreAI}
           onExploreCEMode={handleExploreCE}
           className="rounded-none"
+          splineUrl={process.env.NEXT_PUBLIC_SPLINE_SCENE_URL}
         />
       </section>
 
