@@ -95,7 +95,19 @@
   border-bottom-color: var(--accent);
 }
 
+@keyframes tab-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .tabPanel {
+  animation: tab-fade-up var(--duration-fast) var(--ease-standard);
   display: flex;
   flex-direction: column;
 }

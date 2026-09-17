@@ -114,7 +114,7 @@ export default function ProjectEditor({
         ))}
       </div>
 
-      <div className={styles.tabPanel}>
+      <div key={tab} className={styles.tabPanel}>
         {tab === "Overview" && <OverviewTab project={project} />}
         {tab === "Media" && <MediaTab project={project} />}
         {tab === "Tags" && <TagsTab project={project} allTags={allTags} />}

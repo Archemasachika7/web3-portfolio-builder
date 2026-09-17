@@ -1,15 +1,38 @@
 .dialog {
   border: var(--line-thickness) solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-modal);
   padding: var(--sp-4);
   max-width: 420px;
   width: calc(100vw - 32px);
   background: var(--bg-raised);
   color: var(--ink);
+  box-shadow: var(--shadow-raised);
+  animation: dialog-in var(--duration-fast) var(--ease-standard);
 }
 
 .dialog::backdrop {
   background: rgba(0, 0, 0, 0.4);
+  animation: backdrop-in var(--duration-fast) var(--ease-standard);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .title {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { usePathname } from "next/navigation"
 import Sidebar from "./Sidebar"
 import Topbar from "./Topbar"
 import { ToastProvider } from "./Toast"
@@ -14,6 +15,7 @@ export default function AdminShell({
   children: React.ReactNode
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const pathname = usePathname()
 
   return (
     <ToastProvider>
@@ -31,7 +33,9 @@ export default function AdminShell({
         )}
         <div className={styles.main}>
           <Topbar userEmail={userEmail} onMenuClick={() => setDrawerOpen((v) => !v)} />
-          <main className={styles.content}>{children}</main>
+          <main key={pathname} className={`${styles.content} page-enter`}>
+            {children}
+          </main>
         </div>
       </div>
     </ToastProvider>
