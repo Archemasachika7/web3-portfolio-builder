@@ -1,0 +1,31 @@
+.dialog {
+  border: var(--line-thickness) solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+  max-width: 420px;
+  width: calc(100vw - 32px);
+  background: var(--bg-raised);
+  color: var(--ink);
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.title {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-1);
+  font-weight: 600;
+}
+
+.description {
+  margin: 0 0 var(--sp-4);
+  color: var(--ink-muted);
+  font-size: var(--fs-00);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}

@@ -1,0 +1,374 @@
+/* ==========================================================================
+   ADMIN DESIGN TOKENS
+   Shares the public site's typography family, spacing scale (8px base)
+   and neutral ink/bg palette for brand continuity, but is tuned for a
+   dense, functional control-panel UI rather than an editorial one.
+   ========================================================================== */
+
+:root {
+  /* ---- colour (same family as the public site) ---- */
+  --bg: #f5f4f0;
+  --bg-raised: #ffffff;
+  --bg-sunken: #ececE7;
+  --ink: #0b0c0e;
+  --ink-muted: #5a5d63;
+  --ink-faint: #9a9da3;
+  --line: rgba(11, 12, 14, 0.12);
+  --line-strong: rgba(11, 12, 14, 0.28);
+  --accent: #c2461d;
+  --accent-quiet: rgba(194, 70, 29, 0.1);
+
+  /* ---- status colours: always paired with text/icon, never alone ---- */
+  --success: #1a7f4e;
+  --success-quiet: rgba(26, 127, 78, 0.1);
+  --warning: #a9660b;
+  --warning-quiet: rgba(169, 102, 11, 0.1);
+  --danger: #b0271e;
+  --danger-quiet: rgba(176, 39, 30, 0.1);
+
+  /* ---- type ---- */
+  --font-display: "Neue Montreal", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --fs-000: 0.6875rem;
+  --fs-00: 0.8125rem;
+  --fs-0: 0.9375rem;
+  --fs-1: 1.125rem;
+  --fs-2: 1.5rem;
+  --fs-3: 2rem;
+
+  /* ---- spacing (8px base, same scale as public site) ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 16px;
+  --sp-4: 24px;
+  --sp-5: 40px;
+  --sp-6: 64px;
+
+  /* ---- structure ---- */
+  --line-thickness: 1px;
+  --radius: 6px;
+  --radius-sm: 4px;
+  --sidebar-w: 248px;
+  --topbar-h: 56px;
+
+  /* ---- motion (restrained) ---- */
+  --t-micro: 120ms;
+  --t-small: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0a0b;
+    --bg-raised: #131417;
+    --bg-sunken: #0d0e10;
+    --ink: #f2f1ed;
+    --ink-muted: #9b9da3;
+    --ink-faint: #6a6d73;
+    --line: rgba(242, 241, 237, 0.12);
+    --line-strong: rgba(242, 241, 237, 0.28);
+    --accent: #e2662f;
+    --accent-quiet: rgba(226, 102, 47, 0.14);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-size: var(--fs-0);
+}
+
+a {
+  color: inherit;
+}
+
+img,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================================================
+   Shared component primitives — used across every admin section instead
+   of ad hoc styles per page.
+   ========================================================================== */
+
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.card {
+  background: var(--bg-raised);
+  border: var(--line-thickness) solid var(--line);
+  border-radius: var(--radius);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: var(--line-thickness) solid var(--line-strong);
+  background: var(--bg-raised);
+  color: var(--ink);
+  font-size: var(--fs-00);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--t-micro) var(--ease-out), border-color var(--t-micro) var(--ease-out);
+}
+
+.btn:hover {
+  background: var(--bg-sunken);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg-raised);
+}
+
+.btn-primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: var(--danger-quiet);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: var(--fs-00);
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.field-hint {
+  font-size: var(--fs-000);
+  color: var(--ink-faint);
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  border: var(--line-thickness) solid var(--line-strong);
+  background: var(--bg-raised);
+  color: var(--ink);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 96px;
+  font-family: var(--font-display);
+  line-height: 1.5;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-00);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge-published {
+  background: var(--success-quiet);
+  color: var(--success);
+}
+
+.badge-draft {
+  background: var(--warning-quiet);
+  color: var(--warning);
+}
+
+.badge-neutral {
+  background: var(--bg-sunken);
+  color: var(--ink-muted);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-00);
+}
+
+.table th {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: var(--line-thickness) solid var(--line-strong);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--sp-3);
+  border-bottom: var(--line-thickness) solid var(--line);
+  vertical-align: middle;
+}
+
+.table tr:hover td {
+  background: var(--bg-sunken);
+}
+
+.toast {
+  position: fixed;
+  bottom: var(--sp-4);
+  right: var(--sp-4);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.toast-item {
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--bg-raised);
+  font-size: var(--fs-00);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  min-width: 220px;
+}
+
+.toast-item[data-tone="error"] {
+  background: var(--danger);
+}
+
+.toast-item[data-tone="success"] {
+  background: var(--success);
+}
+
+.dropzone {
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius);
+  padding: var(--sp-5);
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: var(--fs-00);
+  cursor: pointer;
+  transition: border-color var(--t-micro) var(--ease-out), background var(--t-micro) var(--ease-out);
+}
+
+.dropzone[data-active="true"] {
+  border-color: var(--accent);
+  background: var(--accent-quiet);
+}
+
+.dropzone:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-sunken) 25%, var(--line) 37%, var(--bg-sunken) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --sidebar-w: 0px;
+  }
+}
