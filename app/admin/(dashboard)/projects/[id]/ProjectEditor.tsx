@@ -13,6 +13,7 @@ import TagsTab from "./TagsTab"
 import ReportTab from "./ReportTab"
 import DisplayTab from "./DisplayTab"
 import ReadinessBanner from "./ReadinessBanner"
+import { publicSiteLink } from "@/lib/siteUrl"
 import styles from "./editor.module.css"
 
 const TABS = ["Overview", "Media", "Tags", "Report", "Display"] as const
@@ -62,8 +63,6 @@ export default function ProjectEditor({
     }
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-
   return (
     <div className={styles.wrap}>
       <div className={styles.header}>
@@ -74,16 +73,14 @@ export default function ProjectEditor({
           </span>
         </div>
         <div className={styles.headerActions}>
-          {siteUrl && (
-            <a
-              href={`${siteUrl}/work/${project.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="btn"
-            >
-              Preview
-            </a>
-          )}
+          <a
+            href={publicSiteLink(`work/${project.slug}`)}
+            target="_blank"
+            rel="noreferrer"
+            className="btn"
+          >
+            Preview ↗
+          </a>
           <button type="button" className="btn" onClick={handlePublishToggle} disabled={publishing}>
             {publishing ? "Working…" : published ? "Unpublish" : "Publish"}
           </button>

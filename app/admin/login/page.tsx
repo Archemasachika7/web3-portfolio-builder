@@ -14,11 +14,31 @@ export default function LoginPage({
 
   return (
     <main className={styles.page}>
-      <div className={`card ${styles.panel}`}>
-        <span className={styles.mark}>ARCHISHMAN DAS · ADMIN</span>
-        <h1 className={styles.heading}>Sign in</h1>
-        <LoginForm next={next} />
-      </div>
+      <aside className={styles.brandPanel}>
+        <div className={styles.brandTop}>
+          <span className={styles.mark}>Portfolio CMS</span>
+        </div>
+        <div className={styles.brandMiddle}>
+          <h1 className={styles.brandName}>Archishman Das</h1>
+          <p className={styles.brandLine}>
+            Projects, media, documents and site content — managed in one place.
+          </p>
+        </div>
+        <div className={styles.brandRules} aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+      </aside>
+
+      <section className={styles.formPanel}>
+        <div className={styles.formInner}>
+          <span className={styles.formEyebrow}>Restricted access</span>
+          <h2 className={styles.heading}>Sign in</h2>
+          <p className={styles.subheading}>Use the admin account for this portfolio&rsquo;s Supabase project.</p>
+          <LoginForm next={next} />
+        </div>
+      </section>
     </main>
   )
 }

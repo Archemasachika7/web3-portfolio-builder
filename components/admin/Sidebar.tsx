@@ -11,11 +11,13 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className={styles.sidebar} aria-label="Admin navigation">
       <div className={styles.brand}>
-        <span className="label">ARCHISHMAN DAS</span>
+        <span className={styles.brandName}>Archishman Das</span>
+        <span className={styles.brandRole}>Portfolio CMS</span>
       </div>
       <div className={styles.groups}>
         {NAV_GROUPS.map((group, i) => (
           <div className={styles.group} key={i}>
+            {group.label && <span className={styles.groupLabel}>{group.label}</span>}
             {group.items.map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(item.href + "/")
