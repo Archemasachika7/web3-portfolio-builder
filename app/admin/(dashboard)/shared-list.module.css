@@ -1,0 +1,91 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 780px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.newForm {
+  display: flex;
+  gap: var(--sp-2);
+  max-width: 480px;
+}
+
+.newForm .input {
+  flex: 1;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.empty {
+  color: var(--ink-faint);
+  font-size: var(--fs-00);
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.tagCheck {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: var(--line-thickness) solid var(--line-strong);
+  font-size: var(--fs-00);
+  cursor: pointer;
+}
+
+.certSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.certThumb {
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.previewLink {
+  display: inline-block;
+  font-size: var(--fs-000);
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.fileActions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.inlineActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.logoPreview {
+  margin-top: var(--sp-2);
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border: var(--line-thickness) solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}

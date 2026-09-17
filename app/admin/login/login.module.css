@@ -1,0 +1,46 @@
+.page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+}
+
+.panel {
+  width: 100%;
+  max-width: 360px;
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.mark {
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--fs-2);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.error {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: var(--danger-quiet);
+  color: var(--danger);
+  font-size: var(--fs-00);
+}

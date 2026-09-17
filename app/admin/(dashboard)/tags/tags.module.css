@@ -1,0 +1,45 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.newForm {
+  display: flex;
+  gap: var(--sp-2);
+  max-width: 560px;
+}
+
+.newForm .input {
+  flex: 1;
+}
+
+.reorderCell {
+  display: flex;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.slug {
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  color: var(--ink-faint);
+}
+
+.actionsCell {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.editRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+  padding: var(--sp-2) 0;
+}
+
+.editRow .input {
+  max-width: 200px;
+}
