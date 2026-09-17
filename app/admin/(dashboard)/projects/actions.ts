@@ -16,13 +16,34 @@ export interface ActionResult {
 export interface ProjectListItem extends Project {
   tagCount: number
   reportCount: number
+  publishedReportCount: number
+  missing: string[]
+}
+
+/** Same rules as the DB's enforce_project_publish_requirements trigger — kept in one place so the list, the editor banner, and the publish action never drift apart. */
+function missingRequirements(p: {
+  title: string | null
+  short_bio: string | null
+  thumbnail_path: string | null
+  project_url: string | null
+  tagCount: number
+  publishedReportCount: number
+}): string[] {
+  const missing: string[] = []
+  if (!p.title?.trim()) missing.push("Title")
+  if (!p.short_bio?.trim()) missing.push("Short bio")
+  if (!p.thumbnail_path) missing.push("Thumbnail")
+  if (!p.project_url?.trim()) missing.push("Project link")
+  if (p.tagCount === 0) missing.push("Tags")
+  if (p.publishedReportCount === 0) missing.push("Published report")
+  return missing
 }
 
 export async function listProjects(): Promise<ProjectListItem[]> {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("projects")
-    .select("*, project_tags(tag_id), reports(id)")
+    .select("*, project_tags(tag_id), reports(id, published)")
     .order("sort_order", { ascending: true })
     .order("updated_at", { ascending: false })
 
@@ -31,11 +52,19 @@ export async function listProjects(): Promise<ProjectListItem[]> {
     return []
   }
 
-  return data.map((p) => ({
-    ...(p as unknown as Project),
-    tagCount: (p.project_tags as unknown[] | null)?.length ?? 0,
-    reportCount: (p.reports as unknown[] | null)?.length ?? 0
-  }))
+  return data.map((p) => {
+    const project = p as unknown as Project
+    const tagCount = (p.project_tags as unknown[] | null)?.length ?? 0
+    const reports = (p.reports as { published: boolean }[] | null) ?? []
+    const publishedReportCount = reports.filter((r) => r.published).length
+    return {
+      ...project,
+      tagCount,
+      reportCount: reports.length,
+      publishedReportCount,
+      missing: missingRequirements({ ...project, tagCount, publishedReportCount })
+    }
+  })
 }
 
 export interface ProjectDetail extends Project {
@@ -174,13 +203,11 @@ export async function checkPublishRequirements(id: string): Promise<PublishCheck
   const project = await getProject(id)
   if (!project) return { canPublish: false, missing: ["Project not found"] }
 
-  const missing: string[] = []
-  if (!project.title?.trim()) missing.push("Title")
-  if (!project.short_bio?.trim()) missing.push("Short bio")
-  if (!project.thumbnail_path) missing.push("Thumbnail")
-  if (!project.project_url?.trim()) missing.push("Project URL")
-  if (project.tags.length === 0) missing.push("At least one tag")
-  if (!project.reports.some((r) => r.published)) missing.push("At least one published report")
+  const missing = missingRequirements({
+    ...project,
+    tagCount: project.tags.length,
+    publishedReportCount: project.reports.filter((r) => r.published).length
+  })
 
   return { canPublish: missing.length === 0, missing }
 }

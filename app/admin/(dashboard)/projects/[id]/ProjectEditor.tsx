@@ -12,6 +12,7 @@ import MediaTab from "./MediaTab"
 import TagsTab from "./TagsTab"
 import ReportTab from "./ReportTab"
 import DisplayTab from "./DisplayTab"
+import ReadinessBanner from "./ReadinessBanner"
 import styles from "./editor.module.css"
 
 const TABS = ["Overview", "Media", "Tags", "Report", "Display"] as const
@@ -95,6 +96,8 @@ export default function ProjectEditor({
           </button>
         </div>
       </div>
+
+      {!published && <ReadinessBanner projectId={project.id} refreshKey={tab} />}
 
       <div className={styles.tabBar} role="tablist">
         {TABS.map((t) => (

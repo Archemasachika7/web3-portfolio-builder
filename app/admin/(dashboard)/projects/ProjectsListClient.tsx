@@ -2,8 +2,21 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import type { ProjectListItem } from "./actions"
+import { publicAssetUrl } from "@/lib/publicUrl"
 import styles from "./projects.module.css"
+
+function ReadinessBadge({ missing }: { missing: string[] }) {
+  if (missing.length === 0) {
+    return <span className="badge badge-published">Ready to publish</span>
+  }
+  return (
+    <span className="badge badge-draft" title={`Missing: ${missing.join(", ")}`}>
+      Incomplete
+    </span>
+  )
+}
 
 export default function ProjectsListClient({ projects }: { projects: ProjectListItem[] }) {
   const [query, setQuery] = useState("")
@@ -69,22 +82,39 @@ export default function ProjectsListClient({ projects }: { projects: ProjectList
       </div>
 
       {filtered.length === 0 ? (
-        <p className={styles.empty}>No projects match.</p>
+        <div className={styles.emptyState}>
+          <p className={styles.empty}>No projects yet.</p>
+        </div>
       ) : view === "table" ? (
         <table className="table">
           <thead>
             <tr>
+              <th></th>
               <th>Title</th>
               <th>Status</th>
+              <th>Readiness</th>
               <th>Featured</th>
               <th>Tags</th>
-              <th>Reports</th>
+              <th>Report</th>
               <th>Updated</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((p) => (
               <tr key={p.id}>
+                <td>
+                  {p.thumbnail_path ? (
+                    <Image
+                      src={publicAssetUrl(p.thumbnail_path) ?? ""}
+                      alt=""
+                      width={48}
+                      height={32}
+                      className={styles.rowThumb}
+                    />
+                  ) : (
+                    <div className={styles.rowThumbPlaceholder} />
+                  )}
+                </td>
                 <td>
                   <Link href={`/admin/projects/${p.id}`} className={styles.rowLink}>
                     {p.title}
@@ -95,9 +125,18 @@ export default function ProjectsListClient({ projects }: { projects: ProjectList
                     {p.published ? "Published" : "Draft"}
                   </span>
                 </td>
+                <td>
+                  <ReadinessBadge missing={p.missing} />
+                </td>
                 <td>{p.featured ? "Yes" : "—"}</td>
                 <td>{p.tagCount}</td>
-                <td>{p.reportCount}</td>
+                <td>
+                  {p.publishedReportCount > 0
+                    ? "Published"
+                    : p.reportCount > 0
+                      ? "Draft only"
+                      : "None"}
+                </td>
                 <td>{new Date(p.updated_at).toLocaleDateString()}</td>
               </tr>
             ))}
@@ -107,12 +146,28 @@ export default function ProjectsListClient({ projects }: { projects: ProjectList
         <div className={styles.cardGrid}>
           {filtered.map((p) => (
             <Link href={`/admin/projects/${p.id}`} key={p.id} className={`card ${styles.projectCard}`}>
-              <span className={`badge ${p.published ? "badge-published" : "badge-draft"}`}>
-                {p.published ? "Published" : "Draft"}
-              </span>
+              <div className={styles.cardThumbWrap}>
+                {p.thumbnail_path ? (
+                  <Image
+                    src={publicAssetUrl(p.thumbnail_path) ?? ""}
+                    alt=""
+                    fill
+                    className={styles.cardThumb}
+                  />
+                ) : (
+                  <div className={styles.cardThumbPlaceholder}>No thumbnail</div>
+                )}
+              </div>
+              <div className={styles.cardBadgeRow}>
+                <span className={`badge ${p.published ? "badge-published" : "badge-draft"}`}>
+                  {p.published ? "Published" : "Draft"}
+                </span>
+                <ReadinessBadge missing={p.missing} />
+              </div>
               <span className={styles.cardTitle}>{p.title}</span>
+              {p.short_bio && <span className={styles.cardBio}>{p.short_bio}</span>}
               <span className={styles.cardMeta}>
-                {p.tagCount} tags · {p.reportCount} reports
+                {p.tagCount} tags · {p.publishedReportCount > 0 ? "report published" : "no published report"}
               </span>
             </Link>
           ))}

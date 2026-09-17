@@ -31,6 +31,46 @@
   gap: var(--sp-2);
 }
 
+.readiness {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--line-thickness) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.readinessGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+}
+
+.readinessItem {
+  font-size: var(--fs-00);
+  font-family: var(--font-mono);
+}
+
+.readinessItem[data-met="true"] {
+  color: var(--success);
+}
+
+.readinessItem[data-met="false"] {
+  color: var(--ink-faint);
+}
+
+.readinessReady {
+  font-size: var(--fs-00);
+  color: var(--success);
+  font-weight: 600;
+}
+
+.readinessNotReady {
+  font-size: var(--fs-000);
+  color: var(--ink-muted);
+}
+
 .tabBar {
   display: flex;
   gap: 4px;

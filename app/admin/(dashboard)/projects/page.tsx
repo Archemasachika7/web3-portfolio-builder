@@ -9,18 +9,18 @@ export default async function ProjectsPage() {
 
   return (
     <div className={styles.page}>
-      <form action={createProject} className={styles.newForm}>
-        <input
-          type="text"
-          name="title"
-          placeholder="New project title…"
-          required
-          className="input"
-        />
-        <button type="submit" className="btn btn-primary">
-          Create draft
-        </button>
-      </form>
+      <div className={styles.pageHeader}>
+        <div>
+          <h1 className={styles.pageTitle}>Projects</h1>
+          <p className={styles.pageSubtitle}>Manage the portfolio&rsquo;s published and draft case studies.</p>
+        </div>
+        <form action={createProject}>
+          <input type="hidden" name="title" value="Untitled Project" />
+          <button type="submit" className={`btn btn-primary ${styles.addProjectBtn}`}>
+            + Add Project
+          </button>
+        </form>
+      </div>
       <ProjectsListClient projects={projects} />
     </div>
   )
