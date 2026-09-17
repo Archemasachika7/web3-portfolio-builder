@@ -12,22 +12,16 @@
   flex-wrap: wrap;
 }
 
-.pageTitle {
-  margin: 0;
-  font-size: var(--fs-2);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
 .pageSubtitle {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   color: var(--ink-muted);
   font-size: var(--fs-00);
+  max-width: 56ch;
 }
 
 .addProjectBtn {
-  font-size: var(--fs-1);
-  padding: 12px 22px;
+  font-size: var(--fs-0);
+  padding: 12px 20px;
   font-weight: 600;
 }
 
@@ -44,18 +38,73 @@
   align-items: center;
 }
 
-.toolbar .input {
-  max-width: 260px;
+/* :global is required — .input/.select are global utility classes, so a
+   plain descendant selector would be scoped to this module and never match. */
+.toolbar :global(.input) {
+  max-width: 280px;
 }
 
-.toolbar .select {
-  max-width: 180px;
+.toolbar :global(.select) {
+  max-width: 190px;
 }
 
 .viewToggle {
   display: flex;
   gap: 4px;
   margin-left: auto;
+}
+
+.bulkBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--line-thickness) solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  animation: bulk-in var(--duration-fast) var(--ease-standard);
+}
+
+@keyframes bulk-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bulkCount {
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.bulkWarn {
+  color: var(--warning);
+}
+
+.bulkActions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.checkCell {
+  width: 36px;
+}
+
+.rowSelected td {
+  background: var(--accent-quiet);
+}
+
+.rowDelete {
+  padding: 5px 12px;
+  font-size: var(--fs-000);
 }
 
 .empty {
@@ -100,13 +149,51 @@
 }
 
 .projectCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-3);
+  color: inherit;
+}
+
+.projectCard:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
+}
+
+.projectCard[data-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.cardSelect {
+  position: absolute;
+  top: calc(var(--sp-3) + 6px);
+  left: calc(var(--sp-3) + 6px);
+  z-index: 1;
+  display: flex;
+  padding: 4px;
+  border-radius: 4px;
+  background: var(--bg-raised);
+  border: var(--line-thickness) solid var(--line-strong);
+}
+
+.cardBody {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: var(--sp-3);
+  align-items: flex-start;
   text-decoration: none;
   color: inherit;
-  align-items: flex-start;
+}
+
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: var(--line-thickness) solid var(--line);
 }
 
 .cardThumbWrap {

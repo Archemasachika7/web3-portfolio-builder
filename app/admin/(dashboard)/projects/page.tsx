@@ -11,7 +11,8 @@ export default async function ProjectsPage() {
     <div className={styles.page}>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Projects</h1>
+          <span className="eyebrow">Work</span>
+          <h1 className="page-title">Projects</h1>
           <p className={styles.pageSubtitle}>Manage the portfolio&rsquo;s published and draft case studies.</p>
         </div>
         <form action={createProject}>

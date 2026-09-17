@@ -263,6 +263,22 @@ export async function deleteProject(id: string): Promise<ActionResult> {
   return { ok: true, error: null }
 }
 
+/** Bulk delete for clearing out draft/junk projects from the list in one go. */
+export async function deleteProjects(ids: string[]): Promise<ActionResult> {
+  if (ids.length === 0) return { ok: true, error: null }
+
+  const failures: string[] = []
+  for (const id of ids) {
+    const result = await deleteProject(id)
+    if (!result.ok) failures.push(result.error ?? id)
+  }
+
+  if (failures.length > 0) {
+    return { ok: false, error: `Failed to delete ${failures.length} of ${ids.length}: ${failures[0]}` }
+  }
+  return { ok: true, error: null }
+}
+
 // ---- Tags -------------------------------------------------------------
 
 export async function setProjectTags(id: string, tagIds: string[]): Promise<ActionResult> {

@@ -4,6 +4,8 @@ export interface NavItem {
 }
 
 export interface NavGroup {
+  /** Section heading shown above the group; omitted for the top-level entry. */
+  label?: string
   items: NavItem[]
 }
 
@@ -11,6 +13,7 @@ export interface NavGroup {
 export const NAV_GROUPS: NavGroup[] = [
   { items: [{ label: "Dashboard", href: "/admin" }] },
   {
+    label: "Identity",
     items: [
       { label: "Profile", href: "/admin/profile" },
       { label: "Education", href: "/admin/education" },
@@ -19,18 +22,21 @@ export const NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    label: "Work",
     items: [
       { label: "Projects", href: "/admin/projects" },
       { label: "Reports / PDFs", href: "/admin/reports" }
     ]
   },
   {
+    label: "Documents",
     items: [
       { label: "Resumes", href: "/admin/resumes" },
       { label: "Certificates", href: "/admin/certificates" }
     ]
   },
   {
+    label: "Site content",
     items: [
       { label: "Homepage Media", href: "/admin/homepage-media" },
       { label: "Tags", href: "/admin/tags" },
@@ -38,13 +44,19 @@ export const NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    label: "Configuration",
     items: [
       { label: "Social Links", href: "/admin/social-links" },
       { label: "Site Settings", href: "/admin/settings" }
     ]
   },
-  { items: [{ label: "Storage", href: "/admin/storage" }] },
-  { items: [{ label: "Activity", href: "/admin/activity" }] }
+  {
+    label: "System",
+    items: [
+      { label: "Storage", href: "/admin/storage" },
+      { label: "Activity", href: "/admin/activity" }
+    ]
+  }
 ]
 
 export function titleForPathname(pathname: string): string {

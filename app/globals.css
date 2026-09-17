@@ -6,23 +6,26 @@
    ========================================================================== */
 
 :root {
-  /* ---- colour: warm architectural paper, muted steel accent ---- */
-  --bg: #f5f4ef;
-  --bg-raised: #fbfaf7;
-  --bg-sunken: #efece3;
-  --ink: #151515;
-  --ink-muted: #6b6b67;
-  --ink-faint: #92928c;
-  --line: #d9d7d0;
-  --line-strong: #c7c5bd;
-  --accent: #5c7185;
-  --accent-quiet: #e8edf0;
+  /* ---- colour: warm architectural paper, muted steel accent ----
+     The workspace sits a clear step darker than raised surfaces so
+     cards, tables and panels read as objects on a desk rather than
+     dissolving into the page. */
+  --bg: #e9e7df;
+  --bg-raised: #fdfdfb;
+  --bg-sunken: #dedbd0;
+  --ink: #12120f;
+  --ink-muted: #5f5f58;
+  --ink-faint: #8a8a80;
+  --line: #cfccc1;
+  --line-strong: #aca899;
+  --accent: #3f5666;
+  --accent-quiet: #dde5ea;
 
   /* dark structural panel — sidebar and high-emphasis dark surfaces only */
-  --panel-dark: #171717;
-  --panel-dark-raised: #232323;
-  --panel-dark-ink: #f5f4ef;
-  --panel-dark-ink-muted: #a8a8a2;
+  --panel-dark: #101010;
+  --panel-dark-raised: #1c1c1b;
+  --panel-dark-ink: #f7f6f1;
+  --panel-dark-ink-muted: #9a9a92;
 
   /* ---- status colours: muted, always paired with text/icon, never alone ---- */
   --success: #527a63;
@@ -39,8 +42,9 @@
   --fs-00: 0.8125rem;
   --fs-0: 0.9375rem;
   --fs-1: 1.125rem;
-  --fs-2: 1.5rem;
-  --fs-3: 2rem;
+  --fs-2: 1.625rem;
+  --fs-3: 2.25rem;
+  --fs-4: 3rem;
 
   /* ---- spacing (8px base, same scale as public site) ---- */
   --sp-1: 4px;
@@ -55,9 +59,10 @@
   --radius: 10px;
   --radius-sm: 6px;
   --radius-modal: 12px;
-  --sidebar-w: 248px;
-  --topbar-h: 56px;
-  --shadow-raised: 0 8px 30px rgba(21, 21, 21, 0.07);
+  --sidebar-w: 256px;
+  --topbar-h: 64px;
+  --shadow-raised: 0 10px 34px rgba(18, 18, 15, 0.1);
+  --shadow-panel: 0 1px 2px rgba(18, 18, 15, 0.05);
 
   /* ---- motion: intentional only — see components/admin motion notes ---- */
   --duration-micro: 140ms;
@@ -152,9 +157,29 @@ textarea {
   background: var(--bg-raised);
   border: var(--line-thickness) solid var(--line);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
   transition: border-color var(--duration-fast) var(--ease-standard),
     transform var(--duration-fast) var(--ease-standard),
     box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+/* Section heading used at the top of every admin page. */
+.page-title {
+  margin: 0;
+  font-size: var(--fs-3);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
 a.card:hover,
@@ -168,13 +193,17 @@ button.card:hover {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 9px 16px;
+  padding: 10px 16px;
   border-radius: var(--radius-sm);
   border: var(--line-thickness) solid var(--line-strong);
   background: var(--bg-raised);
   color: var(--ink);
   font-size: var(--fs-00);
   font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  box-shadow: var(--shadow-panel);
   cursor: pointer;
   transition: background var(--duration-micro) var(--ease-standard),
     border-color var(--duration-micro) var(--ease-standard),
@@ -247,12 +276,19 @@ button.card:hover {
 .textarea,
 .select {
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
   border: var(--line-thickness) solid var(--line-strong);
   background: var(--bg-raised);
   color: var(--ink);
-  transition: border-color var(--duration-fast) var(--ease-standard);
+  font-size: var(--fs-00);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--ink-faint);
 }
 
 .input:focus,
@@ -315,13 +351,20 @@ button.card:hover {
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: var(--fs-00);
+  background: var(--bg-raised);
+  border: var(--line-thickness) solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-panel);
 }
 
 .table th {
   text-align: left;
-  padding: var(--sp-2) var(--sp-3);
+  padding: 11px var(--sp-3);
+  background: var(--bg-sunken);
   font-family: var(--font-mono);
   font-size: var(--fs-000);
   letter-spacing: 0.08em;
@@ -337,7 +380,11 @@ button.card:hover {
   vertical-align: middle;
 }
 
-.table tr:hover td {
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover td {
   background: var(--bg-sunken);
 }
 
