@@ -6,25 +6,31 @@
    ========================================================================== */
 
 :root {
-  /* ---- colour (same family as the public site) ---- */
-  --bg: #f5f4f0;
-  --bg-raised: #ffffff;
-  --bg-sunken: #ececE7;
-  --ink: #0b0c0e;
-  --ink-muted: #5a5d63;
-  --ink-faint: #9a9da3;
-  --line: rgba(11, 12, 14, 0.12);
-  --line-strong: rgba(11, 12, 14, 0.28);
-  --accent: #c2461d;
-  --accent-quiet: rgba(194, 70, 29, 0.1);
+  /* ---- colour: warm architectural paper, muted steel accent ---- */
+  --bg: #f5f4ef;
+  --bg-raised: #fbfaf7;
+  --bg-sunken: #efece3;
+  --ink: #151515;
+  --ink-muted: #6b6b67;
+  --ink-faint: #92928c;
+  --line: #d9d7d0;
+  --line-strong: #c7c5bd;
+  --accent: #5c7185;
+  --accent-quiet: #e8edf0;
 
-  /* ---- status colours: always paired with text/icon, never alone ---- */
-  --success: #1a7f4e;
-  --success-quiet: rgba(26, 127, 78, 0.1);
-  --warning: #a9660b;
-  --warning-quiet: rgba(169, 102, 11, 0.1);
-  --danger: #b0271e;
-  --danger-quiet: rgba(176, 39, 30, 0.1);
+  /* dark structural panel — sidebar and high-emphasis dark surfaces only */
+  --panel-dark: #171717;
+  --panel-dark-raised: #232323;
+  --panel-dark-ink: #f5f4ef;
+  --panel-dark-ink-muted: #a8a8a2;
+
+  /* ---- status colours: muted, always paired with text/icon, never alone ---- */
+  --success: #527a63;
+  --success-quiet: rgba(82, 122, 99, 0.12);
+  --warning: #9a7748;
+  --warning-quiet: rgba(154, 119, 72, 0.12);
+  --danger: #a35a58;
+  --danger-quiet: rgba(163, 90, 88, 0.12);
 
   /* ---- type ---- */
   --font-display: "Neue Montreal", "Helvetica Neue", Arial, sans-serif;
@@ -46,29 +52,41 @@
 
   /* ---- structure ---- */
   --line-thickness: 1px;
-  --radius: 6px;
-  --radius-sm: 4px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-modal: 12px;
   --sidebar-w: 248px;
   --topbar-h: 56px;
+  --shadow-raised: 0 8px 30px rgba(21, 21, 21, 0.07);
 
-  /* ---- motion (restrained) ---- */
-  --t-micro: 120ms;
-  --t-small: 200ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* ---- motion: intentional only — see components/admin motion notes ---- */
+  --duration-micro: 140ms;
+  --duration-fast: 180ms;
+  --duration-normal: 220ms;
+  --duration-slow: 300ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-linear: linear;
+  /* kept for any existing references during the transition to the tokens above */
+  --t-micro: var(--duration-micro);
+  --t-small: var(--duration-fast);
+  --ease-out: var(--ease-standard);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0a0a0b;
-    --bg-raised: #131417;
-    --bg-sunken: #0d0e10;
-    --ink: #f2f1ed;
-    --ink-muted: #9b9da3;
-    --ink-faint: #6a6d73;
-    --line: rgba(242, 241, 237, 0.12);
-    --line-strong: rgba(242, 241, 237, 0.28);
-    --accent: #e2662f;
-    --accent-quiet: rgba(226, 102, 47, 0.14);
+    --bg: #121212;
+    --bg-raised: #191919;
+    --bg-sunken: #0e0e0e;
+    --ink: #f5f4ef;
+    --ink-muted: #a8a8a2;
+    --ink-faint: #6f6f6a;
+    --line: #2c2c2a;
+    --line-strong: #3d3d3a;
+    --accent: #8ba3b8;
+    --accent-quiet: rgba(139, 163, 184, 0.14);
+    --panel-dark: #0d0d0d;
+    --panel-dark-raised: #1a1a1a;
   }
 }
 
@@ -134,6 +152,16 @@ textarea {
   background: var(--bg-raised);
   border: var(--line-thickness) solid var(--line);
   border-radius: var(--radius);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+a.card:hover,
+button.card:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
 }
 
 .btn {
@@ -148,11 +176,17 @@ textarea {
   font-size: var(--fs-00);
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--t-micro) var(--ease-out), border-color var(--t-micro) var(--ease-out);
+  transition: background var(--duration-micro) var(--ease-standard),
+    border-color var(--duration-micro) var(--ease-standard),
+    transform var(--duration-micro) var(--ease-standard);
 }
 
 .btn:hover {
   background: var(--bg-sunken);
+}
+
+.btn:active {
+  transform: translateY(0);
 }
 
 .btn:focus-visible {
@@ -180,6 +214,7 @@ textarea {
 .btn-primary:hover {
   background: var(--accent);
   border-color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .btn-danger {
@@ -217,6 +252,7 @@ textarea {
   border: var(--line-thickness) solid var(--line-strong);
   background: var(--bg-raised);
   color: var(--ink);
+  transition: border-color var(--duration-fast) var(--ease-standard);
 }
 
 .input:focus,
@@ -323,6 +359,18 @@ textarea {
   font-size: var(--fs-00);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   min-width: 220px;
+  animation: toast-in var(--duration-fast) var(--ease-standard);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(8px, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
 }
 
 .toast-item[data-tone="error"] {
@@ -366,10 +414,32 @@ textarea {
   100% { background-position: 0 50%; }
 }
 
+.page-enter {
+  animation: page-fade-up var(--duration-normal) var(--ease-standard);
+}
+
+@keyframes page-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  a.card:hover,
+  button.card:hover,
+  .btn-primary:hover {
+    transform: none;
   }
 }
 

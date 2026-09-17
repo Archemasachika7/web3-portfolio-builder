@@ -4,14 +4,31 @@
   gap: var(--sp-4);
 }
 
-.newForm {
+.pageHeader {
   display: flex;
-  gap: var(--sp-2);
-  max-width: 480px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
 }
 
-.newForm .input {
-  flex: 1;
+.pageTitle {
+  margin: 0;
+  font-size: var(--fs-2);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pageSubtitle {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+  font-size: var(--fs-00);
+}
+
+.addProjectBtn {
+  font-size: var(--fs-1);
+  padding: 12px 22px;
+  font-weight: 600;
 }
 
 .listWrap {
@@ -46,6 +63,26 @@
   font-size: var(--fs-00);
 }
 
+.emptyState {
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.rowThumb {
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  display: block;
+}
+
+.rowThumbPlaceholder {
+  width: 48px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+}
+
 .rowLink {
   text-decoration: none;
   color: var(--ink);
@@ -65,16 +102,56 @@
 .projectCard {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: 6px;
   padding: var(--sp-3);
   text-decoration: none;
   color: inherit;
   align-items: flex-start;
 }
 
+.cardThumbWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-sunken);
+  margin-bottom: var(--sp-2);
+}
+
+.cardThumb {
+  object-fit: cover;
+}
+
+.cardThumbPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  color: var(--ink-faint);
+}
+
+.cardBadgeRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .cardTitle {
   font-weight: 600;
   font-size: var(--fs-0);
+}
+
+.cardBio {
+  font-size: var(--fs-00);
+  color: var(--ink-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .cardMeta {

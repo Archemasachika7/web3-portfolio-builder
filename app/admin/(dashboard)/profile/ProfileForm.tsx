@@ -4,26 +4,30 @@ import { useState, useTransition } from "react"
 import Image from "next/image"
 import FileDropzone from "@/components/admin/FileDropzone"
 import { useToast } from "@/components/admin/Toast"
-import { saveProfile, uploadProfilePicture } from "./actions"
+import { saveProfile, uploadProfilePicture, type ResumeOption } from "./actions"
 import { IMAGE_TYPES } from "@/lib/storageConstants"
 import { publicAssetUrl } from "@/lib/publicUrl"
-import type { Profile } from "@/shared/database.types"
+import type { Profile, OtherLink } from "@/shared/database.types"
 import styles from "./profile.module.css"
 
 export default function ProfileForm({
   profile,
-  profilePictureUrl
+  profilePictureUrl,
+  resumeOptions
 }: {
   profile: Profile | null
   profilePictureUrl: string | null
+  resumeOptions: ResumeOption[]
 }) {
   const { showToast } = useToast()
   const [pending, startTransition] = useTransition()
   const [imagePath, setImagePath] = useState(profile?.profile_image_path ?? null)
   const [imageUrl, setImageUrl] = useState(profilePictureUrl)
   const [dirty, setDirty] = useState(false)
+  const [otherLinks, setOtherLinks] = useState<OtherLink[]>(profile?.other_links ?? [])
 
   function handleSubmit(formData: FormData) {
+    formData.set("other_links", JSON.stringify(otherLinks.filter((l) => l.label.trim() && l.url.trim())))
     startTransition(async () => {
       const result = await saveProfile(formData)
       if (result.ok) {
@@ -135,6 +139,27 @@ export default function ProfileForm({
           <TextField label="LinkedIn" name="linkedin_url" defaultValue={profile?.linkedin_url} />
           <TextField label="Instagram" name="instagram_url" defaultValue={profile?.instagram_url} />
         </div>
+        <OtherLinksRepeater links={otherLinks} onChange={setOtherLinks} />
+      </section>
+
+      <section className={`card ${styles.section}`}>
+        <span className="label">CURRENT STATUS</span>
+        <p className="field-hint">These already render on the public About page — keep them accurate.</p>
+        <TextField label="Current status" name="current_status" defaultValue={profile?.current_status} />
+        <div className={styles.grid2}>
+          <TextField label="Current CGPA" name="current_cgpa" defaultValue={profile?.current_cgpa} />
+          <div className="field">
+            <label htmlFor="resume_id">Linked resume</label>
+            <select id="resume_id" name="resume_id" defaultValue={profile?.resume_id ?? ""} className="select">
+              <option value="">None</option>
+              {resumeOptions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </section>
 
       <section className={`card ${styles.section}`}>
@@ -163,8 +188,6 @@ export default function ProfileForm({
           </label>
         </div>
       </section>
-
-      <input type="hidden" name="other_links" value="[]" />
 
       <div className={styles.saveBar}>
         {dirty && <span className={styles.unsaved}>Unsaved changes</span>}
@@ -200,6 +223,60 @@ function TextField({
         required={required}
         className="input"
       />
+    </div>
+  )
+}
+
+function OtherLinksRepeater({
+  links,
+  onChange
+}: {
+  links: OtherLink[]
+  onChange: (links: OtherLink[]) => void
+}) {
+  return (
+    <div className={styles.repeater}>
+      <span className="label">OTHER LINKS</span>
+      {links.map((link, i) => (
+        <div key={i} className={styles.repeaterRow}>
+          <input
+            type="text"
+            placeholder="Label"
+            value={link.label}
+            onChange={(e) => {
+              const next = [...links]
+              next[i] = { ...next[i], label: e.target.value }
+              onChange(next)
+            }}
+            className="input"
+          />
+          <input
+            type="text"
+            placeholder="https://…"
+            value={link.url}
+            onChange={(e) => {
+              const next = [...links]
+              next[i] = { ...next[i], url: e.target.value }
+              onChange(next)
+            }}
+            className="input"
+          />
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={() => onChange(links.filter((_, idx) => idx !== i))}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="btn"
+        onClick={() => onChange([...links, { label: "", url: "" }])}
+      >
+        + Add link
+      </button>
     </div>
   )
 }

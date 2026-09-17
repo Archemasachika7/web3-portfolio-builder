@@ -13,10 +13,17 @@ import {
   reorderAchievements,
   uploadAchievementImage
 } from "./actions"
-import type { Achievement } from "@/shared/database.types"
+import type { AchievementWithTags } from "./actions"
+import type { Tag } from "@/shared/database.types"
 import styles from "../shared-list.module.css"
 
-export default function AchievementsClient({ achievements: initial }: { achievements: Achievement[] }) {
+export default function AchievementsClient({
+  achievements: initial,
+  allTags
+}: {
+  achievements: AchievementWithTags[]
+  allTags: Tag[]
+}) {
   const [items, setItems] = useState(initial)
   const { showToast } = useToast()
   const router = useRouter()
@@ -126,6 +133,23 @@ export default function AchievementsClient({ achievements: initial }: { achievem
                   currentLabel={a.image_path}
                   onUpload={(file) => uploadAchievementImage(a.id, a.image_path, file)}
                 />
+              </div>
+
+              <div className="field">
+                <label>Tags</label>
+                <div className={styles.tagRow}>
+                  {allTags.map((tag) => (
+                    <label key={tag.id} className={styles.tagCheck}>
+                      <input
+                        type="checkbox"
+                        name="tag_ids"
+                        value={tag.id}
+                        defaultChecked={a.tags.some((t) => t.id === tag.id)}
+                      />
+                      {tag.name}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <label className="checkbox-row">

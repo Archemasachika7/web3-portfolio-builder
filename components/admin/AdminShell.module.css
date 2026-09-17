@@ -13,8 +13,8 @@
   top: 0;
   height: 100dvh;
   width: var(--sidebar-w);
-  background: var(--bg-raised);
-  border-right: var(--line-thickness) solid var(--line);
+  background: var(--panel-dark);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -22,7 +22,11 @@
 
 .brand {
   padding: var(--sp-4) var(--sp-3);
-  border-bottom: var(--line-thickness) solid var(--line);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand span {
+  color: var(--panel-dark-ink);
 }
 
 .groups {
@@ -35,7 +39,7 @@
   display: flex;
   flex-direction: column;
   padding: var(--sp-2) var(--sp-2);
-  border-bottom: var(--line-thickness) solid var(--line);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .group:last-child {
@@ -48,19 +52,23 @@
   border-radius: var(--radius-sm);
   font-size: var(--fs-00);
   text-decoration: none;
-  color: var(--ink-muted);
-  transition: background var(--t-micro) var(--ease-out), color var(--t-micro) var(--ease-out);
+  color: var(--panel-dark-ink-muted);
+  transition: background var(--duration-micro) var(--ease-standard),
+    color var(--duration-micro) var(--ease-standard),
+    transform var(--duration-micro) var(--ease-standard);
 }
 
 .navLink:hover {
-  background: var(--bg-sunken);
-  color: var(--ink);
+  background: var(--panel-dark-raised);
+  color: var(--panel-dark-ink);
+  transform: translateX(1px);
 }
 
 .navLink[data-active="true"] {
-  background: var(--accent-quiet);
+  background: var(--panel-dark-raised);
   color: var(--accent);
   font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .main {

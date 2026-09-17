@@ -33,7 +33,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       { label: "Homepage Media", href: "/admin/homepage-media" },
-      { label: "Tags", href: "/admin/tags" }
+      { label: "Tags", href: "/admin/tags" },
+      { label: "Domain Nodes", href: "/admin/domain-nodes" }
     ]
   },
   {
