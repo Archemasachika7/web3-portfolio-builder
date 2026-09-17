@@ -12,6 +12,21 @@ export interface ActionResult {
   error: string | null
 }
 
+export interface ResumeOption {
+  id: string
+  title: string
+}
+
+export async function listResumeOptions(): Promise<ResumeOption[]> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase.from("resumes").select("id, title").order("priority", { ascending: false })
+  if (error) {
+    console.error("listResumeOptions", error.message)
+    return []
+  }
+  return data as ResumeOption[]
+}
+
 export async function getProfile(): Promise<Profile | null> {
   const supabase = createAdminClient()
   const { data, error } = await supabase.from("profiles").select("*").limit(1).maybeSingle()
@@ -62,6 +77,9 @@ export async function saveProfile(formData: FormData): Promise<ActionResult> {
     primary_domain: nullableString(formData.get("primary_domain")),
     secondary_domains: secondaryDomains,
     featured_profile: formData.get("featured_profile") === "on",
+    current_status: nullableString(formData.get("current_status")),
+    current_cgpa: nullableString(formData.get("current_cgpa")),
+    resume_id: nullableString(formData.get("resume_id")),
     published: formData.get("published") === "on"
   }
 

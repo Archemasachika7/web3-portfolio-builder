@@ -45,6 +45,23 @@ export function normalizeStoragePath(folder: string, originalName: string): stri
   return `${cleanFolder}/${normalizeFilename(originalName)}`
 }
 
+/**
+ * Prefixes a normalized filename with a short random id. Required for
+ * any folder that can hold more than one file at a time (project
+ * gallery media, reports): without this, two uploads that happen to
+ * share a source filename (e.g. two different "photo.jpg" screenshots)
+ * would silently overwrite each other's Storage object, since uploadAsset
+ * always uses upsert:true. Single-slot uploads (a profile picture, a
+ * project's one thumbnail, a homepage section's one video) don't need
+ * this — they use a fixed filenameOverride instead, precisely because
+ * upsert-in-place is the desired "replace" behavior there.
+ */
+export function uniqueFilename(originalName: string): string {
+  const normalized = normalizeFilename(originalName)
+  const id = crypto.randomUUID().slice(0, 8)
+  return `${id}-${normalized}`
+}
+
 export function getPublicAssetUrl(path: string | null | undefined): string | null {
   if (!path) return null
   const supabase = createAdminClient()

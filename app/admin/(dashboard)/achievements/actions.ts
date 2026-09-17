@@ -5,24 +5,31 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
 import { uploadAsset, deleteAsset, IMAGE_TYPES } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
-import type { Achievement } from "@/shared/database.types"
+import type { Achievement, Tag } from "@/shared/database.types"
 
 export interface ActionResult {
   ok: boolean
   error: string | null
 }
 
-export async function listAchievements(): Promise<Achievement[]> {
+export interface AchievementWithTags extends Achievement {
+  tags: Tag[]
+}
+
+export async function listAchievements(): Promise<AchievementWithTags[]> {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("achievements")
-    .select("*")
+    .select("*, achievement_tags(tags(*))")
     .order("sort_order", { ascending: true })
   if (error) {
     console.error("listAchievements", error.message)
     return []
   }
-  return data as Achievement[]
+  return data.map((a) => ({
+    ...(a as unknown as Achievement),
+    tags: ((a.achievement_tags as { tags: Tag }[] | null) ?? []).map((at) => at.tags)
+  }))
 }
 
 export async function createAchievement(): Promise<ActionResult> {
@@ -59,6 +66,12 @@ export async function updateAchievement(id: string, formData: FormData): Promise
 
   const { error } = await supabase.from("achievements").update(payload).eq("id", id)
   if (error) return { ok: false, error: error.message }
+
+  const tagIds = formData.getAll("tag_ids").map(String)
+  await supabase.from("achievement_tags").delete().eq("achievement_id", id)
+  if (tagIds.length > 0) {
+    await supabase.from("achievement_tags").insert(tagIds.map((tag_id) => ({ achievement_id: id, tag_id })))
+  }
 
   revalidatePath("/admin/achievements")
   return { ok: true, error: null }

@@ -16,6 +16,11 @@ import { publicAssetUrl } from "@/lib/publicUrl"
 import type { ProjectMedia } from "@/shared/database.types"
 import styles from "./editor.module.css"
 
+function isVideoPath(path: string | null): boolean {
+  if (!path) return false
+  return /\.(mp4|webm)$/i.test(path)
+}
+
 export default function MediaTab({ project }: { project: ProjectDetail }) {
   const { showToast } = useToast()
   const [thumbnailPath, setThumbnailPath] = useState(project.thumbnail_path)
@@ -49,18 +54,26 @@ export default function MediaTab({ project }: { project: ProjectDetail }) {
 
         <div>
           <span className="label">HERO MEDIA</span>
-          {heroPath && (
-            <Image
-              src={publicAssetUrl(heroPath) ?? ""}
-              alt=""
-              width={200}
-              height={130}
-              className={styles.mediaPreview}
-            />
-          )}
+          {heroPath &&
+            (isVideoPath(heroPath) ? (
+              <video
+                src={publicAssetUrl(heroPath) ?? ""}
+                className={styles.mediaPreview}
+                muted
+                controls
+              />
+            ) : (
+              <Image
+                src={publicAssetUrl(heroPath) ?? ""}
+                alt=""
+                width={200}
+                height={130}
+                className={styles.mediaPreview}
+              />
+            ))}
           <FileDropzone
-            accept={IMAGE_TYPES.join(",")}
-            hint="JPG / PNG / WEBP, up to 8MB"
+            accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
+            hint="JPG / PNG / WEBP up to 8MB, or MP4 / WEBM up to 200MB"
             currentLabel={heroPath}
             onUpload={(file) =>
               uploadProjectImage(project.id, project.slug, "hero_media_path", heroPath, file)

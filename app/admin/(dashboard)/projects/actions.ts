@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { uploadAsset, deleteAsset, IMAGE_TYPES, VIDEO_TYPES, PDF_TYPES } from "@/lib/storage"
+import { uploadAsset, deleteAsset, uniqueFilename, IMAGE_TYPES, VIDEO_TYPES, PDF_TYPES } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import { requireAdminSession } from "@/lib/auth"
 import type { Project, ProjectMedia, Report, Tag } from "@/shared/database.types"
@@ -268,10 +268,14 @@ export async function uploadProjectImage(
   await requireAdminSession()
 
   const name = field === "thumbnail_path" ? "thumbnail" : "hero"
+  // Thumbnail is a card/list preview image only. Hero can be a still
+  // image or a motion asset, matching what the public project detail
+  // page's hero area supports.
+  const allowedTypes = field === "thumbnail_path" ? IMAGE_TYPES : [...IMAGE_TYPES, ...VIDEO_TYPES]
   const result = await uploadAsset({
     file,
     folder: `PROJECTS/${slug}`,
-    allowedTypes: IMAGE_TYPES,
+    allowedTypes,
     filenameOverride: `${name}.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`
   })
 
@@ -298,7 +302,12 @@ export async function uploadProjectMedia(
   await requireAdminSession()
   const allowed = mediaType === "video" ? VIDEO_TYPES : IMAGE_TYPES
 
-  const result = await uploadAsset({ file, folder: `PROJECTS/${slug}/media`, allowedTypes: allowed })
+  const result = await uploadAsset({
+    file,
+    folder: `PROJECTS/${slug}/media`,
+    allowedTypes: allowed,
+    filenameOverride: uniqueFilename(file.name)
+  })
   if (result.error || !result.path) return { ok: false, error: result.error }
 
   const supabase = createAdminClient()
@@ -351,7 +360,12 @@ export async function uploadProjectReport(
   file: File
 ): Promise<ActionResult> {
   await requireAdminSession()
-  const result = await uploadAsset({ file, folder: `REPORTS/${slug}`, allowedTypes: PDF_TYPES })
+  const result = await uploadAsset({
+    file,
+    folder: `REPORTS/${slug}`,
+    allowedTypes: PDF_TYPES,
+    filenameOverride: uniqueFilename(file.name)
+  })
   if (result.error || !result.path) return { ok: false, error: result.error }
 
   const supabase = createAdminClient()

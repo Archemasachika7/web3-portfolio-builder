@@ -59,6 +59,27 @@
   padding-bottom: 9px;
 }
 
+.repeater {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: var(--line-thickness) solid var(--line);
+}
+
+.repeaterRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: var(--sp-2);
+}
+
+@media (max-width: 640px) {
+  .repeaterRow {
+    grid-template-columns: 1fr;
+  }
+}
+
 .saveBar {
   position: sticky;
   bottom: 0;
