@@ -1,16 +1,11 @@
 import "server-only"
 import { createAdminClient } from "./supabase/admin"
+import { IMAGE_TYPES, VIDEO_TYPES } from "./storageConstants"
 
 export const PUBLIC_BUCKET = "portfolio-public"
 export const PRIVATE_BUCKET = "portfolio-private"
 
-export const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-export const VIDEO_TYPES = ["video/mp4", "video/webm"]
-export const PDF_TYPES = ["application/pdf"]
-export const RESUME_TYPES = [
-  ...PDF_TYPES,
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-]
+export { IMAGE_TYPES, VIDEO_TYPES, PDF_TYPES, RESUME_TYPES } from "./storageConstants"
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // 8MB
 const MAX_VIDEO_BYTES = 200 * 1024 * 1024 // 200MB

@@ -165,6 +165,12 @@ textarea {
   cursor: not-allowed;
 }
 
+.btn[data-active="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg-raised);
+}
+
 .btn-primary {
   background: var(--ink);
   border-color: var(--ink);
