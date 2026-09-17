@@ -112,7 +112,7 @@ export default function ExperienceClient({
                   <input name="end_date" type="date" defaultValue={exp.end_date ?? ""} className="input" />
                 </div>
                 <label className="checkbox-row" style={{ alignSelf: "flex-end", paddingBottom: 9 }}>
-                  <input type="checkbox" name="current" defaultChecked={exp.current} />
+                  <input type="checkbox" name="is_current" defaultChecked={exp.is_current} />
                   Current role
                 </label>
               </div>

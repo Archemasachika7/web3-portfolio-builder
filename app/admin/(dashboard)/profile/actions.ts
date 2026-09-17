@@ -57,7 +57,7 @@ export async function saveProfile(formData: FormData): Promise<ActionResult> {
     instagram_url: nullableString(formData.get("instagram_url")),
     other_links: otherLinks,
     availability_status: nullableString(formData.get("availability_status")),
-    current_role: nullableString(formData.get("current_role")),
+    current_role_title: nullableString(formData.get("current_role_title")),
     current_company: nullableString(formData.get("current_company")),
     primary_domain: nullableString(formData.get("primary_domain")),
     secondary_domains: secondaryDomains,

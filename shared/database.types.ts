@@ -36,7 +36,7 @@ export interface Profile {
   instagram_url: string | null
   other_links: OtherLink[]
   availability_status: string | null
-  current_role: string | null
+  current_role_title: string | null
   current_company: string | null
   primary_domain: string | null
   secondary_domains: string[]
@@ -60,7 +60,7 @@ export interface Education {
   // Added by 20260917230100_extend_education.sql
   program: string | null
   location: string | null
-  current: boolean
+  is_current: boolean
   grade: string | null
   score: string | null
   rank: string | null
@@ -210,7 +210,7 @@ export interface Experience {
   location: string | null
   start_date: string | null
   end_date: string | null
-  current: boolean
+  is_current: boolean
   short_description: string | null
   long_description: string | null
   website_url: string | null

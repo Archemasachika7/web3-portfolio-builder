@@ -123,7 +123,7 @@ export default function EducationClient({ education: initial }: { education: Edu
                   <input name="end_year" type="number" defaultValue={edu.end_year ?? ""} className="input" />
                 </div>
                 <label className="checkbox-row" style={{ alignSelf: "flex-end", paddingBottom: 9 }}>
-                  <input type="checkbox" name="current" defaultChecked={edu.current} />
+                  <input type="checkbox" name="is_current" defaultChecked={edu.is_current} />
                   Currently attending
                 </label>
               </div>

@@ -90,7 +90,7 @@ export default function ProfileForm({
         </div>
         <TextField label="Headline" name="headline" defaultValue={profile?.headline} />
         <div className={styles.grid2}>
-          <TextField label="Current role" name="current_role" defaultValue={profile?.current_role} />
+          <TextField label="Current role" name="current_role_title" defaultValue={profile?.current_role_title} />
           <TextField label="Current company" name="current_company" defaultValue={profile?.current_company} />
         </div>
       </section>
