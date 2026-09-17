@@ -1,0 +1,66 @@
+.dropLabel {
+  margin: 0 0 4px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.current {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-000);
+  color: var(--ink-faint);
+  word-break: break-all;
+}
+
+.status {
+  margin-top: var(--sp-2);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-size: var(--fs-00);
+}
+
+.fileName {
+  color: var(--ink-muted);
+  word-break: break-all;
+}
+
+.pct {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.ok {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.err {
+  color: var(--danger);
+}
+
+.track {
+  margin-top: 6px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--duration-micro) var(--ease-linear);
+}

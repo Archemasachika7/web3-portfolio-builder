@@ -66,6 +66,7 @@
   --duration-slow: 300ms;
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-linear: linear;
   /* kept for any existing references during the transition to the tokens above */
   --t-micro: var(--duration-micro);
   --t-small: var(--duration-fast);

@@ -110,6 +110,34 @@ export async function uploadHomepageAsset(
   return { path: result.path, error: null }
 }
 
+/**
+ * Records a storage_path/mobile_storage_path already uploaded via
+ * /api/upload (the XHR-with-progress path large videos use) — this only
+ * does the DB write and old-asset cleanup, no upload.
+ */
+export async function attachHomepageAsset(
+  id: string,
+  field: "storage_path" | "mobile_storage_path",
+  path: string,
+  previousPath: string | null,
+  isVideo: boolean
+): Promise<ActionResult> {
+  await requireAdminSession()
+  const supabase = createAdminClient()
+
+  const updatePayload: Record<string, string> = { [field]: path }
+  if (field === "storage_path") {
+    updatePayload.media_type = isVideo ? "video" : "image"
+  }
+
+  const { error } = await supabase.from("homepage_media").update(updatePayload).eq("id", id)
+  if (error) return { ok: false, error: error.message }
+
+  if (previousPath && previousPath !== path) await deleteAsset(previousPath)
+  revalidatePath("/admin/homepage-media")
+  return { ok: true, error: null }
+}
+
 function nullableString(value: FormDataEntryValue | null): string | null {
   const s = String(value ?? "").trim()
   return s.length ? s : null

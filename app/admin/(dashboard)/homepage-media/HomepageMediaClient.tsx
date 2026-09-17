@@ -4,10 +4,17 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
 import FileDropzone from "@/components/admin/FileDropzone"
+import MediaUploadField from "@/components/admin/MediaUploadField"
 import { useToast } from "@/components/admin/Toast"
 import { IMAGE_TYPES, VIDEO_TYPES } from "@/lib/storageConstants"
 import { publicAssetUrl } from "@/lib/publicUrl"
-import { createHomepageSection, updateHomepageMedia, deleteHomepageSection, uploadHomepageAsset } from "./actions"
+import {
+  createHomepageSection,
+  updateHomepageMedia,
+  deleteHomepageSection,
+  uploadHomepageAsset,
+  attachHomepageAsset
+} from "./actions"
 import type { HomepageMedia } from "@/shared/database.types"
 import styles from "../shared-list.module.css"
 
@@ -92,15 +99,37 @@ export default function HomepageMediaClient({ sections: initial }: { sections: H
           </label>
 
           <div className="grid-3">
-            <UploadField
-              label="Video / image"
-              current={section.storage_path}
-              accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
-              hint="Image or MP4/WEBM"
-              onUpload={(file) =>
-                uploadHomepageAsset(section.id, section.section_key, "storage_path", section.storage_path, file)
-              }
-            />
+            <div className="field">
+              <label>Video / image</label>
+              {section.storage_path && (
+                <a
+                  href={publicAssetUrl(section.storage_path) ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.previewLink}
+                >
+                  View current
+                </a>
+              )}
+              <MediaUploadField
+                accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
+                hint="Image or MP4/WEBM — shows real upload progress"
+                folder={`HOMEPAGE/${section.section_key}`}
+                allowedTypesKey="image-or-video"
+                filenameOverride={(file) => `media.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`}
+                currentLabel={section.storage_path}
+                onUploaded={async (path, file) => {
+                  const result = await attachHomepageAsset(
+                    section.id,
+                    "storage_path",
+                    path,
+                    section.storage_path,
+                    VIDEO_TYPES.includes(file.type)
+                  )
+                  if (!result.ok) showToast(result.error ?? "Saved file but failed to update the record.", "error")
+                }}
+              />
+            </div>
             <UploadField
               label="Poster (video fallback frame)"
               current={section.poster_path}
@@ -110,21 +139,37 @@ export default function HomepageMediaClient({ sections: initial }: { sections: H
                 uploadHomepageAsset(section.id, section.section_key, "poster_path", section.poster_path, file)
               }
             />
-            <UploadField
-              label="Mobile version"
-              current={section.mobile_storage_path}
-              accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
-              hint="Optional, differently-cropped"
-              onUpload={(file) =>
-                uploadHomepageAsset(
-                  section.id,
-                  section.section_key,
-                  "mobile_storage_path",
-                  section.mobile_storage_path,
-                  file
-                )
-              }
-            />
+            <div className="field">
+              <label>Mobile version</label>
+              {section.mobile_storage_path && (
+                <a
+                  href={publicAssetUrl(section.mobile_storage_path) ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.previewLink}
+                >
+                  View current
+                </a>
+              )}
+              <MediaUploadField
+                accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
+                hint="Optional, differently-cropped — shows real upload progress"
+                folder={`HOMEPAGE/${section.section_key}`}
+                allowedTypesKey="image-or-video"
+                filenameOverride={(file) => `mobile.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`}
+                currentLabel={section.mobile_storage_path}
+                onUploaded={async (path, file) => {
+                  const result = await attachHomepageAsset(
+                    section.id,
+                    "mobile_storage_path",
+                    path,
+                    section.mobile_storage_path,
+                    VIDEO_TYPES.includes(file.type)
+                  )
+                  if (!result.ok) showToast(result.error ?? "Saved file but failed to update the record.", "error")
+                }}
+              />
+            </div>
           </div>
         </EditableCard>
       ))}

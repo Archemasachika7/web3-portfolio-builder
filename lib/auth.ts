@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "./supabase/server"
+import type { User } from "@supabase/supabase-js"
 
 /**
  * Call at the top of any protected Server Component/layout. Redirects
@@ -17,5 +18,19 @@ export async function requireAdminSession() {
     redirect("/admin/login")
   }
 
+  return user
+}
+
+/**
+ * Route Handler equivalent of requireAdminSession() — redirect() is
+ * meant for page rendering and doesn't produce a sane response from an
+ * API route, so this returns null instead of throwing/redirecting and
+ * lets the caller respond with a normal 401.
+ */
+export async function getAdminUserForApi(): Promise<User | null> {
+  const supabase = await createClient()
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
   return user
 }

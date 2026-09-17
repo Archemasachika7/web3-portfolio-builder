@@ -318,25 +318,32 @@ export async function uploadProjectImage(
   return { path: result.path, error: null }
 }
 
-// ---- Project media ------------------------------------------------------
-
-export async function uploadProjectMedia(
+/**
+ * Records a hero media path already uploaded via /api/upload (the
+ * XHR-with-progress path large video files use) — this only does the DB
+ * write and old-asset cleanup, no upload.
+ */
+export async function attachProjectHeroMedia(
   projectId: string,
-  slug: string,
-  mediaType: ProjectMedia["media_type"],
-  file: File
+  path: string,
+  previousPath: string | null
 ): Promise<ActionResult> {
   await requireAdminSession()
-  const allowed = mediaType === "video" ? VIDEO_TYPES : IMAGE_TYPES
+  const supabase = createAdminClient()
+  const { error } = await supabase.from("projects").update({ hero_media_path: path }).eq("id", projectId)
+  if (error) return { ok: false, error: error.message }
+  if (previousPath && previousPath !== path) await deleteAsset(previousPath)
+  revalidatePath(`/admin/projects/${projectId}`)
+  return { ok: true, error: null }
+}
 
-  const result = await uploadAsset({
-    file,
-    folder: `PROJECTS/${slug}/media`,
-    allowedTypes: allowed,
-    filenameOverride: uniqueFilename(file.name)
-  })
-  if (result.error || !result.path) return { ok: false, error: result.error }
-
+/** Same idea as attachProjectHeroMedia but for a new gallery item — the file is already in Storage, this just creates the project_media row. */
+export async function attachProjectMedia(
+  projectId: string,
+  mediaType: ProjectMedia["media_type"],
+  path: string
+): Promise<ActionResult> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { count } = await supabase
     .from("project_media")
@@ -346,14 +353,15 @@ export async function uploadProjectMedia(
   const { error } = await supabase.from("project_media").insert({
     project_id: projectId,
     media_type: mediaType,
-    storage_path: result.path,
+    storage_path: path,
     display_order: count ?? 0
   })
   if (error) return { ok: false, error: error.message }
-
   revalidatePath(`/admin/projects/${projectId}`)
   return { ok: true, error: null }
 }
+
+// ---- Project media ------------------------------------------------------
 
 export async function deleteProjectMedia(mediaId: string, projectId: string, storagePath: string): Promise<ActionResult> {
   await requireAdminSession()

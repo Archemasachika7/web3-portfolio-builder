@@ -5,12 +5,14 @@ import Image from "next/image"
 import type { ProjectDetail } from "../actions"
 import {
   uploadProjectImage,
-  uploadProjectMedia,
+  attachProjectHeroMedia,
+  attachProjectMedia,
   deleteProjectMedia,
   reorderProjectMedia
 } from "../actions"
 import { useToast } from "@/components/admin/Toast"
 import FileDropzone from "@/components/admin/FileDropzone"
+import MediaUploadField from "@/components/admin/MediaUploadField"
 import { IMAGE_TYPES, VIDEO_TYPES } from "@/lib/storageConstants"
 import { publicAssetUrl } from "@/lib/publicUrl"
 import type { ProjectMedia } from "@/shared/database.types"
@@ -71,14 +73,21 @@ export default function MediaTab({ project }: { project: ProjectDetail }) {
                 className={styles.mediaPreview}
               />
             ))}
-          <FileDropzone
+          <MediaUploadField
             accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
-            hint="JPG / PNG / WEBP up to 8MB, or MP4 / WEBM up to 200MB"
+            hint="JPG / PNG / WEBP up to 8MB, or MP4 / WEBM up to 200MB — shows real upload progress"
+            folder={`PROJECTS/${project.slug}`}
+            allowedTypesKey="image-or-video"
+            filenameOverride={(file) => `hero.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`}
             currentLabel={heroPath}
-            onUpload={(file) =>
-              uploadProjectImage(project.id, project.slug, "hero_media_path", heroPath, file)
-            }
-            onUploaded={(path) => setHeroPath(path)}
+            onUploaded={async (path) => {
+              const result = await attachProjectHeroMedia(project.id, path, heroPath)
+              if (result.ok) {
+                setHeroPath(path)
+              } else {
+                showToast(result.error ?? "Saved file but failed to update the project record.", "error")
+              }
+            }}
           />
         </div>
       </div>
@@ -154,16 +163,20 @@ export default function MediaTab({ project }: { project: ProjectDetail }) {
         </div>
 
         <div className={styles.addMediaRow}>
-          <FileDropzone
+          <MediaUploadField
             accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
-            hint="Image or video — add another gallery item"
-            onUpload={async (file) => {
+            hint="Image or video — add another gallery item, shows real upload progress"
+            folder={`PROJECTS/${project.slug}/media`}
+            allowedTypesKey="image-or-video"
+            unique
+            onUploaded={async (path, file) => {
               const mediaType = VIDEO_TYPES.includes(file.type) ? "video" : "screenshot"
-              const result = await uploadProjectMedia(project.id, project.slug, mediaType, file)
+              const result = await attachProjectMedia(project.id, mediaType, path)
               if (result.ok) {
                 window.location.reload()
+              } else {
+                showToast(result.error ?? "Saved file but failed to add it to the gallery.", "error")
               }
-              return { path: result.ok ? "added" : null, error: result.error }
             }}
           />
         </div>
