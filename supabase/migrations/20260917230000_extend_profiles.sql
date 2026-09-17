@@ -12,7 +12,7 @@ alter table profiles add column if not exists linkedin_url text;
 alter table profiles add column if not exists instagram_url text;
 alter table profiles add column if not exists other_links jsonb not null default '[]'::jsonb;
 alter table profiles add column if not exists availability_status text;
-alter table profiles add column if not exists current_role text;
+alter table profiles add column if not exists current_role_title text;
 alter table profiles add column if not exists current_company text;
 alter table profiles add column if not exists primary_domain text;
 alter table profiles add column if not exists secondary_domains text[] not null default '{}'::text[];

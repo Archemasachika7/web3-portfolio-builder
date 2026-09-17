@@ -7,7 +7,7 @@
 
 alter table education add column if not exists program text;
 alter table education add column if not exists location text;
-alter table education add column if not exists current boolean not null default false;
+alter table education add column if not exists is_current boolean not null default false;
 alter table education add column if not exists grade text;
 alter table education add column if not exists score text;
 alter table education add column if not exists rank text;

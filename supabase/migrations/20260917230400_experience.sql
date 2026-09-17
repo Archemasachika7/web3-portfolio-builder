@@ -11,7 +11,7 @@ create table if not exists experience (
   location text,
   start_date date,
   end_date date,
-  current boolean not null default false,
+  is_current boolean not null default false,
   short_description text,
   long_description text,
   website_url text,

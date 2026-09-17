@@ -56,7 +56,7 @@ export async function updateExperience(id: string, formData: FormData): Promise<
     location: nullableString(formData.get("location")),
     start_date: nullableString(formData.get("start_date")),
     end_date: nullableString(formData.get("end_date")),
-    current: formData.get("current") === "on",
+    is_current: formData.get("is_current") === "on",
     short_description: nullableString(formData.get("short_description")),
     long_description: nullableString(formData.get("long_description")),
     website_url: nullableString(formData.get("website_url")),

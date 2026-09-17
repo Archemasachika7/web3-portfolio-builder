@@ -50,7 +50,7 @@ export async function updateEducation(id: string, formData: FormData): Promise<A
     location: nullableString(formData.get("location")),
     start_year: numberOrNull(formData.get("start_year")),
     end_year: numberOrNull(formData.get("end_year")),
-    current: formData.get("current") === "on",
+    is_current: formData.get("is_current") === "on",
     cgpa: nullableString(formData.get("cgpa")),
     grade: nullableString(formData.get("grade")),
     score: nullableString(formData.get("score")),
