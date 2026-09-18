@@ -198,6 +198,38 @@
   border: var(--line-thickness) solid var(--line);
 }
 
+.modelThumb {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--sp-2);
+  text-align: center;
+  border-radius: var(--radius-sm);
+  border: var(--line-thickness) solid var(--line-strong);
+  background: var(--bg-sunken);
+}
+
+.modelBadge {
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--bg-raised);
+}
+
+.modelName {
+  font-size: var(--fs-000);
+  color: var(--ink-faint);
+  word-break: break-all;
+  line-height: 1.3;
+}
+
 .mediaItemActions {
   display: flex;
   gap: 4px;
