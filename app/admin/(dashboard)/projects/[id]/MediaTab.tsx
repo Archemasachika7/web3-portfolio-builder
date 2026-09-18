@@ -13,7 +13,7 @@ import {
 import { useToast } from "@/components/admin/Toast"
 import FileDropzone from "@/components/admin/FileDropzone"
 import MediaUploadField from "@/components/admin/MediaUploadField"
-import { IMAGE_TYPES, VIDEO_TYPES } from "@/lib/storageConstants"
+import { IMAGE_TYPES, VIDEO_TYPES, MODEL_ACCEPT, isModelFile } from "@/lib/storageConstants"
 import { publicAssetUrl } from "@/lib/publicUrl"
 import type { ProjectMedia } from "@/shared/database.types"
 import styles from "./editor.module.css"
@@ -99,7 +99,18 @@ export default function MediaTab({ project }: { project: ProjectDetail }) {
             .sort((a, b) => a.display_order - b.display_order)
             .map((m, index) => (
               <div key={m.id} className={styles.mediaItem}>
-                {m.media_type === "video" ? (
+                {m.media_type === "model" ? (
+                  // No thumbnail to show for geometry — label it instead of
+                  // feeding a .step file to next/image.
+                  <div className={styles.modelThumb}>
+                    <span className={styles.modelBadge}>
+                      {(m.storage_path.split(".").pop() ?? "3D").toUpperCase()}
+                    </span>
+                    <span className={styles.modelName}>
+                      {m.storage_path.split("/").pop()}
+                    </span>
+                  </div>
+                ) : m.media_type === "video" ? (
                   <video src={publicAssetUrl(m.storage_path) ?? ""} className={styles.mediaThumb} muted />
                 ) : (
                   <Image
@@ -164,13 +175,19 @@ export default function MediaTab({ project }: { project: ProjectDetail }) {
 
         <div className={styles.addMediaRow}>
           <MediaUploadField
-            accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
-            hint="Image or video — add another gallery item, shows real upload progress"
+            accept={[...IMAGE_TYPES, ...VIDEO_TYPES, MODEL_ACCEPT].join(",")}
+            hint="Image, video or 3D model (STEP / STL / GLB / OBJ) — shows real upload progress"
             folder={`PROJECTS/${project.slug}/media`}
-            allowedTypesKey="image-or-video"
+            allowedTypesKey="image-video-or-model"
             unique
             onUploaded={async (path, file) => {
-              const mediaType = VIDEO_TYPES.includes(file.type) ? "video" : "screenshot"
+              // Models are matched by extension: browsers report STEP/STL
+              // with no MIME type, so file.type can't classify them.
+              const mediaType = isModelFile(file.name)
+                ? "model"
+                : VIDEO_TYPES.includes(file.type)
+                  ? "video"
+                  : "screenshot"
               const result = await attachProjectMedia(project.id, mediaType, path)
               if (result.ok) {
                 window.location.reload()

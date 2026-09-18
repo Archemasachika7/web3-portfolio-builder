@@ -10,7 +10,7 @@ export interface MediaUploadFieldProps {
   hint: string
   /** Storage folder passed through to /api/upload, e.g. `PROJECTS/{slug}/media`. */
   folder: string
-  allowedTypesKey: "video" | "image-or-video"
+  allowedTypesKey: "video" | "image-or-video" | "model" | "image-video-or-model"
   /** Give multi-file collections a unique object key so concurrent uploads never overwrite each other. */
   unique?: boolean
   filenameOverride?: string | ((file: File) => string)

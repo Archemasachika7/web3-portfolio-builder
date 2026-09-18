@@ -1,17 +1,30 @@
 import "server-only"
 import { createAdminClient } from "./supabase/admin"
-import { IMAGE_TYPES, VIDEO_TYPES } from "./storageConstants"
+import { IMAGE_TYPES, VIDEO_TYPES, MODEL_EXTENSIONS, extensionOf, modelContentType } from "./storageConstants"
 
 export const PUBLIC_BUCKET = "portfolio-public"
 export const PRIVATE_BUCKET = "portfolio-private"
 
-export { IMAGE_TYPES, VIDEO_TYPES, PDF_TYPES, RESUME_TYPES } from "./storageConstants"
+export {
+  IMAGE_TYPES,
+  VIDEO_TYPES,
+  PDF_TYPES,
+  RESUME_TYPES,
+  MODEL_EXTENSIONS,
+  MODEL_ACCEPT,
+  extensionOf,
+  isModelFile
+} from "./storageConstants"
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // 8MB
 const MAX_VIDEO_BYTES = 200 * 1024 * 1024 // 200MB
 const MAX_DOC_BYTES = 25 * 1024 * 1024 // 25MB
+// CAD assemblies and dense meshes routinely run large; the viewer streams
+// them with real progress, so a higher ceiling than documents is warranted.
+const MAX_MODEL_BYTES = 150 * 1024 * 1024 // 150MB
 
-export function maxBytesFor(mimeType: string): number {
+export function maxBytesFor(mimeType: string, filename?: string): number {
+  if (filename && MODEL_EXTENSIONS.includes(extensionOf(filename))) return MAX_MODEL_BYTES
   if (VIDEO_TYPES.includes(mimeType)) return MAX_VIDEO_BYTES
   if (IMAGE_TYPES.includes(mimeType)) return MAX_IMAGE_BYTES
   return MAX_DOC_BYTES
@@ -88,6 +101,12 @@ export interface UploadAssetParams {
   file: File
   folder: string
   allowedTypes: string[]
+  /**
+   * Extensions accepted regardless of MIME type. Required for CAD/3D
+   * formats: browsers report STEP, IGES, STL and friends as "" or
+   * "application/octet-stream", so MIME-only checks reject valid files.
+   */
+  allowedExtensions?: string[]
   bucket?: string
   /** Use a fixed filename (e.g. "profile-picture.webp") instead of the upload's original name — for slots that always hold exactly one current file. */
   filenameOverride?: string
@@ -109,17 +128,24 @@ export async function uploadAsset({
   file,
   folder,
   allowedTypes,
+  allowedExtensions,
   bucket = PUBLIC_BUCKET,
   filenameOverride
 }: UploadAssetParams): Promise<UploadAssetResult> {
-  if (!allowedTypes.includes(file.type)) {
+  const ext = extensionOf(file.name)
+  const typeAllowed = allowedTypes.includes(file.type)
+  const extensionAllowed = allowedExtensions?.includes(ext) ?? false
+
+  if (!typeAllowed && !extensionAllowed) {
     return {
       path: null,
-      error: `Unsupported file type "${file.type || "unknown"}". Allowed: ${allowedTypes.join(", ")}.`
+      error: allowedExtensions?.length
+        ? `Unsupported file ".${ext || "?"}". Allowed: ${allowedExtensions.map((e) => `.${e}`).join(", ")}.`
+        : `Unsupported file type "${file.type || "unknown"}". Allowed: ${allowedTypes.join(", ")}.`
     }
   }
 
-  const limit = maxBytesFor(file.type)
+  const limit = maxBytesFor(file.type, file.name)
   if (file.size > limit) {
     return {
       path: null,
@@ -134,7 +160,9 @@ export async function uploadAsset({
   const supabase = createAdminClient()
   const { error } = await supabase.storage.from(bucket).upload(path, file, {
     upsert: true,
-    contentType: file.type
+    // Models usually arrive with no MIME type at all; fall back to one
+    // derived from the extension so Storage serves something sane.
+    contentType: file.type || (extensionAllowed ? modelContentType(file.name) : "application/octet-stream")
   })
 
   if (error) {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminUserForApi } from "@/lib/auth"
-import { uploadAsset, uniqueFilename, IMAGE_TYPES, VIDEO_TYPES } from "@/lib/storage"
+import { uploadAsset, uniqueFilename, IMAGE_TYPES, VIDEO_TYPES, MODEL_EXTENSIONS } from "@/lib/storage"
 
 /**
  * Used specifically by client-side XHR uploads that need real byte-level
@@ -18,7 +18,17 @@ import { uploadAsset, uniqueFilename, IMAGE_TYPES, VIDEO_TYPES } from "@/lib/sto
  */
 const TYPE_SETS: Record<string, string[]> = {
   video: VIDEO_TYPES,
-  "image-or-video": [...IMAGE_TYPES, ...VIDEO_TYPES]
+  "image-or-video": [...IMAGE_TYPES, ...VIDEO_TYPES],
+  // Models carry no usable MIME type, so this set is empty and the
+  // extension allowlist below does the validating instead.
+  model: [],
+  "image-video-or-model": [...IMAGE_TYPES, ...VIDEO_TYPES]
+}
+
+/** Keys whose uploads are additionally allowed by extension. */
+const EXTENSION_SETS: Record<string, string[]> = {
+  model: MODEL_EXTENSIONS,
+  "image-video-or-model": MODEL_EXTENSIONS
 }
 
 export async function POST(request: Request) {
@@ -42,6 +52,7 @@ export async function POST(request: Request) {
     file,
     folder,
     allowedTypes: TYPE_SETS[allowedTypesKey],
+    allowedExtensions: EXTENSION_SETS[allowedTypesKey],
     filenameOverride:
       typeof filenameOverride === "string" && filenameOverride
         ? filenameOverride
