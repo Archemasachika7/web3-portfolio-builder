@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
 import { createSocialLink, updateSocialLink, deleteSocialLink, reorderSocialLinks } from "./actions"
 import type { SocialLink } from "@/shared/database.types"
@@ -11,12 +12,13 @@ export default function SocialLinksClient({ links: initial }: { links: SocialLin
   const [links, setLinks] = useState(initial)
   const [editingId, setEditingId] = useState<string | null>(null)
   const { showToast } = useToast()
+  const router = useRouter()
 
   async function handleCreate(formData: FormData) {
     const result = await createSocialLink(formData)
     if (result.ok) {
       showToast("Added", "success")
-      window.location.reload()
+      router.refresh()
     } else {
       showToast(result.error ?? "Failed", "error")
     }

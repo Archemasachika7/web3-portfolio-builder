@@ -120,8 +120,10 @@
   align-items: center;
   gap: var(--sp-3);
   padding: 0 var(--sp-5);
-  background: rgba(253, 253, 251, 0.85);
-  backdrop-filter: blur(8px);
+  /* Opaque rather than translucent-blurred: backdrop-filter on a sticky
+     bar forces the browser to re-blur the content behind it on every
+     scroll frame, which made the whole workspace feel sluggish. */
+  background: var(--bg-raised);
   border-bottom: var(--line-thickness) solid var(--line-strong);
 }
 
