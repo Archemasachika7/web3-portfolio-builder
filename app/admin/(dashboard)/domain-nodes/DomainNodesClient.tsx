@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import EditableCard from "@/components/admin/EditableCard"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
 import { createDomainNode, updateDomainNode, deleteDomainNode, reorderDomainNodes } from "./actions"
 import type { DomainNodeWithTags } from "./actions"
@@ -17,12 +18,13 @@ export default function DomainNodesClient({
 }) {
   const [items, setItems] = useState(initial)
   const { showToast } = useToast()
+  const router = useRouter()
 
   async function handleCreate(formData: FormData) {
     const result = await createDomainNode(formData)
     if (result.ok) {
       showToast("Added", "success")
-      window.location.reload()
+      router.refresh()
     } else {
       showToast(result.error ?? "Failed", "error")
     }

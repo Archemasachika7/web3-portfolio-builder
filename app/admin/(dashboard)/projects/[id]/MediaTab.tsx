@@ -10,6 +10,7 @@ import {
   deleteProjectMedia,
   reorderProjectMedia
 } from "../actions"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
 import FileDropzone from "@/components/admin/FileDropzone"
 import MediaUploadField from "@/components/admin/MediaUploadField"
@@ -25,6 +26,7 @@ function isVideoPath(path: string | null): boolean {
 
 export default function MediaTab({ project }: { project: ProjectDetail }) {
   const { showToast } = useToast()
+  const router = useRouter()
   const [thumbnailPath, setThumbnailPath] = useState(project.thumbnail_path)
   const [heroPath, setHeroPath] = useState(project.hero_media_path)
   const [media, setMedia] = useState<ProjectMedia[]>(project.media)
@@ -190,7 +192,7 @@ export default function MediaTab({ project }: { project: ProjectDetail }) {
                   : "screenshot"
               const result = await attachProjectMedia(project.id, mediaType, path)
               if (result.ok) {
-                window.location.reload()
+                router.refresh()
               } else {
                 showToast(result.error ?? "Saved file but failed to add it to the gallery.", "error")
               }

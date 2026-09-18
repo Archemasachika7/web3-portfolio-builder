@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { createTag, updateTag, deleteTag, reorderTags } from "./actions"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
 import ConfirmDialog, { type ConfirmDialogHandle } from "@/components/admin/ConfirmDialog"
 import type { Tag } from "@/shared/database.types"
@@ -9,6 +10,7 @@ import styles from "./tags.module.css"
 
 export default function TagsClient({ tags: initialTags }: { tags: Tag[] }) {
   const { showToast } = useToast()
+  const router = useRouter()
   const [tags, setTags] = useState(initialTags)
   const [editingId, setEditingId] = useState<string | null>(null)
   const deleteDialogRef = useRef<ConfirmDialogHandle>(null)
@@ -18,7 +20,7 @@ export default function TagsClient({ tags: initialTags }: { tags: Tag[] }) {
     const result = await createTag(formData)
     if (result.ok) {
       showToast("Tag created", "success")
-      window.location.reload()
+      router.refresh()
     } else {
       showToast(result.error ?? "Failed", "error")
     }

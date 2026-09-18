@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { ProjectDetail } from "../actions"
 import { uploadProjectReport, deleteProjectReport, toggleReportPublished } from "../actions"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
 import FileDropzone from "@/components/admin/FileDropzone"
 import { PDF_TYPES } from "@/lib/storageConstants"
@@ -11,6 +12,7 @@ import styles from "./editor.module.css"
 
 export default function ReportTab({ project }: { project: ProjectDetail }) {
   const { showToast } = useToast()
+  const router = useRouter()
   const [reports, setReports] = useState(project.reports)
   const [title, setTitle] = useState("")
 
@@ -87,7 +89,7 @@ export default function ReportTab({ project }: { project: ProjectDetail }) {
         hint="PDF, up to 25MB"
         onUpload={async (file) => {
           const result = await uploadProjectReport(project.id, project.slug, title, file)
-          if (result.ok) window.location.reload()
+          if (result.ok) router.refresh()
           return { path: result.ok ? "added" : null, error: result.error }
         }}
       />

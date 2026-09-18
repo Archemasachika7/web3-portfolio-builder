@@ -1,0 +1,39 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.eyebrow {
+  width: 72px;
+  height: 11px;
+}
+
+.title {
+  width: 260px;
+  height: 34px;
+}
+
+.sub {
+  width: 380px;
+  max-width: 100%;
+  height: 14px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.row {
+  height: 56px;
+  width: 100%;
+}
