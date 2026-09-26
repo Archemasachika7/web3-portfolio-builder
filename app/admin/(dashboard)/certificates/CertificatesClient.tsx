@@ -1,19 +1,16 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import EditableCard from "@/components/admin/EditableCard"
-import FileDropzone from "@/components/admin/FileDropzone"
+import UploadField from "@/components/admin/UploadField"
 import { useToast } from "@/components/admin/Toast"
-import { IMAGE_TYPES, PDF_TYPES } from "@/lib/storageConstants"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
 import { publicAssetUrl } from "@/lib/publicUrl"
 import {
   createCertificate,
   updateCertificate,
-  deleteCertificate,
-  uploadCertificateFile,
-  uploadCertificateThumbnail
+  deleteCertificate
 } from "./actions"
 import type { CertificateWithTags } from "./actions"
 import type { Tag } from "@/shared/database.types"
@@ -26,7 +23,7 @@ export default function CertificatesClient({
   certificates: CertificateWithTags[]
   allTags: Tag[]
 }) {
-  const [items, setItems] = useState(initial)
+  const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
   const router = useRouter()
 
@@ -37,7 +34,7 @@ export default function CertificatesClient({
           type="button"
           className="btn btn-primary"
           onClick={async () => {
-            const result = await createCertificate()
+            const result = await callAction(() => createCertificate())
             if (result.ok) router.refresh()
             else showToast(result.error ?? "Failed", "error")
           }}
@@ -56,11 +53,13 @@ export default function CertificatesClient({
               summary={
                 <span className={styles.certSummary}>
                   {c.thumbnail_path && (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={publicAssetUrl(c.thumbnail_path) ?? ""}
                       alt=""
                       width={32}
                       height={32}
+                      loading="lazy"
                       className={styles.certThumb}
                     />
                   )}
@@ -77,7 +76,7 @@ export default function CertificatesClient({
               }
               onSave={(fd) => updateCertificate(c.id, fd)}
               onDelete={async () => {
-                const result = await deleteCertificate(c.id, c.certificate_file_path, c.thumbnail_path)
+                const result = await callAction(() => deleteCertificate(c.id))
                 if (result.ok) setItems((prev) => prev.filter((x) => x.id !== c.id))
                 return result
               }}
@@ -139,31 +138,11 @@ export default function CertificatesClient({
               <div className="grid-2">
                 <div className="field">
                   <label>Thumbnail image</label>
-                  <FileDropzone
-                    accept={IMAGE_TYPES.join(",")}
-                    hint="JPG / PNG / WEBP"
-                    currentLabel={c.thumbnail_path}
-                    onUpload={(file) => uploadCertificateThumbnail(c.id, c.thumbnail_path, file)}
-                  />
+                  <UploadField kind="certificate-thumbnail" recordId={c.id} currentPath={c.thumbnail_path} removable />
                 </div>
                 <div className="field">
                   <label>Certificate PDF</label>
-                  <FileDropzone
-                    accept={PDF_TYPES.join(",")}
-                    hint="PDF, up to 25MB"
-                    currentLabel={c.certificate_file_path}
-                    onUpload={(file) => uploadCertificateFile(c.id, c.certificate_file_path, file)}
-                  />
-                  {c.certificate_file_path && (
-                    <div className={styles.fileActions}>
-                      <a href={publicAssetUrl(c.certificate_file_path) ?? "#"} target="_blank" rel="noreferrer" className="btn">
-                        View
-                      </a>
-                      <a href={publicAssetUrl(c.certificate_file_path) ?? "#"} download className="btn">
-                        Download
-                      </a>
-                    </div>
-                  )}
+                  <UploadField kind="certificate-file" recordId={c.id} currentPath={c.certificate_file_path} removable />
                 </div>
               </div>
 

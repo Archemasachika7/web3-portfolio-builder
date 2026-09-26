@@ -1,0 +1,134 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: var(--line-thickness) solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  min-width: 0;
+}
+
+.preview {
+  flex: none;
+  width: 56px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--bg-sunken);
+  border: var(--line-thickness) solid var(--line);
+}
+
+.fileBadge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 42px;
+  border-radius: 6px;
+  background: var(--bg-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+.currentName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-000);
+  font-family: var(--font-mono);
+  color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.currentActions {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+
+.dropLabel {
+  margin: 0 0 4px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-size: var(--fs-00);
+  min-height: 30px;
+}
+
+.statusRight {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.fileName {
+  min-width: 0;
+  color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pct {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.ok {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.err {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--fs-00);
+  line-height: 1.45;
+}
+
+.track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: transform 120ms linear;
+}

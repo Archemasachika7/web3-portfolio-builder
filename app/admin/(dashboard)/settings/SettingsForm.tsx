@@ -1,23 +1,20 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import FileDropzone from "@/components/admin/FileDropzone"
+import { useTransition } from "react"
+import UploadField from "@/components/admin/UploadField"
 import { useToast } from "@/components/admin/Toast"
-import { IMAGE_TYPES } from "@/lib/storageConstants"
-import { publicAssetUrl } from "@/lib/publicUrl"
-import { saveSiteSettings, uploadSiteImage } from "./actions"
+import { callAction } from "@/lib/callAction"
+import { saveSiteSettings } from "./actions"
 import type { SiteSettings } from "@/shared/database.types"
 import styles from "../profile/profile.module.css"
 
 export default function SettingsForm({ settings }: { settings: SiteSettings | null }) {
   const { showToast } = useToast()
   const [pending, startTransition] = useTransition()
-  const [faviconPath, setFaviconPath] = useState(settings?.favicon_path ?? null)
-  const [ogImagePath, setOgImagePath] = useState(settings?.default_og_image_path ?? null)
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
-      const result = await saveSiteSettings(formData)
+      const result = await callAction(() => saveSiteSettings(formData))
       showToast(result.ok ? "Saved" : result.error ?? "Save failed", result.ok ? "success" : "error")
     })
   }
@@ -67,44 +64,27 @@ export default function SettingsForm({ settings }: { settings: SiteSettings | nu
       <section className={`card ${styles.section}`}>
         <span className="label">IMAGES</span>
         <div className={styles.grid2}>
-          <div>
+          <div className="field">
             <span className="label">Favicon</span>
-            <FileDropzone
-              accept={IMAGE_TYPES.join(",")}
-              hint="JPG / PNG / WEBP"
-              disabled={!settings?.id}
-              currentLabel={faviconPath}
-              onUpload={async (file) => {
-                if (!settings?.id) return { path: null, error: "Save settings first." }
-                const result = await uploadSiteImage(settings.id, "favicon_path", faviconPath, file)
-                if (result.path) setFaviconPath(result.path)
-                return result
-              }}
+            <UploadField
+              kind="site-favicon"
+              recordId={settings?.id ?? null}
+              currentPath={settings?.favicon_path}
+              disabledReason="Save the settings once, then add images."
+              removable
             />
-            {faviconPath && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={publicAssetUrl(faviconPath) ?? ""} alt="" width={32} height={32} />
-            )}
           </div>
-          <div>
+          <div className="field">
             <span className="label">Default OG image</span>
-            <FileDropzone
-              accept={IMAGE_TYPES.join(",")}
-              hint="JPG / PNG / WEBP"
-              disabled={!settings?.id}
-              currentLabel={ogImagePath}
-              onUpload={async (file) => {
-                if (!settings?.id) return { path: null, error: "Save settings first." }
-                const result = await uploadSiteImage(settings.id, "default_og_image_path", ogImagePath, file)
-                if (result.path) setOgImagePath(result.path)
-                return result
-              }}
+            <UploadField
+              kind="site-og"
+              recordId={settings?.id ?? null}
+              currentPath={settings?.default_og_image_path}
+              disabledReason="Save the settings once, then add images."
+              removable
             />
           </div>
         </div>
-        {!settings?.id && (
-          <p className={styles.hintMuted}>Save once before uploading images.</p>
-        )}
       </section>
 
       <section className={`card ${styles.section}`}>

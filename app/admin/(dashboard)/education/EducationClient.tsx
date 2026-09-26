@@ -1,18 +1,17 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
-import FileDropzone from "@/components/admin/FileDropzone"
+import UploadField from "@/components/admin/UploadField"
 import { useToast } from "@/components/admin/Toast"
-import { IMAGE_TYPES } from "@/lib/storageConstants"
-import { publicAssetUrl } from "@/lib/publicUrl"
-import { createEducation, updateEducation, deleteEducation, reorderEducation, uploadEducationLogo } from "./actions"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
+import { createEducation, updateEducation, deleteEducation, reorderEducation } from "./actions"
 import type { Education } from "@/shared/database.types"
 import styles from "../shared-list.module.css"
 
 export default function EducationClient({ education: initial }: { education: Education[] }) {
-  const [items, setItems] = useState(initial)
+  const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
   const router = useRouter()
 
@@ -22,7 +21,11 @@ export default function EducationClient({ education: initial }: { education: Edu
     if (target < 0 || target >= next.length) return
     ;[next[index], next[target]] = [next[target], next[index]]
     setItems(next)
-    await reorderEducation(next.map((e) => e.id))
+    const result = await callAction(() => reorderEducation(next.map((e) => e.id)))
+    if (!result.ok) {
+      setItems(items)
+      showToast(result.error ?? "Couldn't save the new order.", "error")
+    }
   }
 
   return (
@@ -32,7 +35,7 @@ export default function EducationClient({ education: initial }: { education: Edu
           type="button"
           className="btn btn-primary"
           onClick={async () => {
-            const result = await createEducation()
+            const result = await callAction(() => createEducation())
             if (result.ok) router.refresh()
             else showToast(result.error ?? "Failed", "error")
           }}
@@ -80,7 +83,7 @@ export default function EducationClient({ education: initial }: { education: Edu
               }
               onSave={(fd) => updateEducation(edu.id, fd)}
               onDelete={async () => {
-                const result = await deleteEducation(edu.id)
+                const result = await callAction(() => deleteEducation(edu.id))
                 if (result.ok) setItems((prev) => prev.filter((e) => e.id !== edu.id))
                 return result
               }}
@@ -154,16 +157,7 @@ export default function EducationClient({ education: initial }: { education: Edu
 
               <div className="field">
                 <label>Logo</label>
-                <FileDropzone
-                  accept={IMAGE_TYPES.join(",")}
-                  hint="JPG / PNG / WEBP"
-                  currentLabel={edu.logo_path}
-                  onUpload={(file) => uploadEducationLogo(edu.id, edu.logo_path, file)}
-                />
-                {edu.logo_path && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={publicAssetUrl(edu.logo_path) ?? ""} alt="" className={styles.logoPreview} />
-                )}
+                <UploadField kind="education-logo" recordId={edu.id} currentPath={edu.logo_path} removable />
               </div>
 
               <label className="checkbox-row">

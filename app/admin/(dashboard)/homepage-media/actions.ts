@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
-import { uploadAsset, deleteAsset, IMAGE_TYPES, VIDEO_TYPES } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import type { HomepageMedia } from "@/shared/database.types"
 
@@ -13,6 +12,7 @@ export interface ActionResult {
 }
 
 export async function listHomepageMedia(): Promise<HomepageMedia[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("homepage_media")
@@ -47,7 +47,6 @@ export async function updateHomepageMedia(id: string, formData: FormData): Promi
   const supabase = createAdminClient()
 
   const payload = {
-    media_type: String(formData.get("media_type") ?? "image"),
     alt_text: nullableString(formData.get("alt_text")),
     motion_type: nullableString(formData.get("motion_type")),
     enabled: formData.get("enabled") === "on",
@@ -71,72 +70,6 @@ export async function deleteHomepageSection(id: string): Promise<ActionResult> {
   return { ok: true, error: null }
 }
 
-type MediaField = "storage_path" | "poster_path" | "mobile_storage_path"
-
-export async function uploadHomepageAsset(
-  id: string,
-  sectionKey: string,
-  field: MediaField,
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-
-  const allowed = VIDEO_TYPES.includes(file.type) ? VIDEO_TYPES : IMAGE_TYPES
-  const nameByField: Record<MediaField, string> = {
-    storage_path: "media",
-    poster_path: "poster",
-    mobile_storage_path: "mobile"
-  }
-  const result = await uploadAsset({
-    file,
-    folder: `HOMEPAGE/${sectionKey}`,
-    allowedTypes: allowed,
-    filenameOverride: `${nameByField[field]}.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`
-  })
-  if (result.error || !result.path) return { path: null, error: result.error }
-
-  const supabase = createAdminClient()
-  const updatePayload: Record<string, string> = { [field]: result.path }
-  if (field === "storage_path") {
-    updatePayload.media_type = VIDEO_TYPES.includes(file.type) ? "video" : "image"
-  }
-
-  const { error } = await supabase.from("homepage_media").update(updatePayload).eq("id", id)
-  if (error) return { path: null, error: "Saved file but failed to update the record." }
-
-  if (previousPath && previousPath !== result.path) await deleteAsset(previousPath)
-  revalidatePath("/admin/homepage-media")
-  return { path: result.path, error: null }
-}
-
-/**
- * Records a storage_path/mobile_storage_path already uploaded via
- * /api/upload (the XHR-with-progress path large videos use) — this only
- * does the DB write and old-asset cleanup, no upload.
- */
-export async function attachHomepageAsset(
-  id: string,
-  field: "storage_path" | "mobile_storage_path",
-  path: string,
-  previousPath: string | null,
-  isVideo: boolean
-): Promise<ActionResult> {
-  await requireAdminSession()
-  const supabase = createAdminClient()
-
-  const updatePayload: Record<string, string> = { [field]: path }
-  if (field === "storage_path") {
-    updatePayload.media_type = isVideo ? "video" : "image"
-  }
-
-  const { error } = await supabase.from("homepage_media").update(updatePayload).eq("id", id)
-  if (error) return { ok: false, error: error.message }
-
-  if (previousPath && previousPath !== path) await deleteAsset(previousPath)
-  revalidatePath("/admin/homepage-media")
-  return { ok: true, error: null }
-}
 
 function nullableString(value: FormDataEntryValue | null): string | null {
   const s = String(value ?? "").trim()

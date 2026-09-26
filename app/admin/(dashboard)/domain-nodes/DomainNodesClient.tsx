@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import EditableCard from "@/components/admin/EditableCard"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
 import { createDomainNode, updateDomainNode, deleteDomainNode, reorderDomainNodes } from "./actions"
 import type { DomainNodeWithTags } from "./actions"
 import type { Tag } from "@/shared/database.types"
@@ -16,12 +17,12 @@ export default function DomainNodesClient({
   nodes: DomainNodeWithTags[]
   allTags: Tag[]
 }) {
-  const [items, setItems] = useState(initial)
+  const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
   const router = useRouter()
 
   async function handleCreate(formData: FormData) {
-    const result = await createDomainNode(formData)
+    const result = await callAction(() => createDomainNode(formData))
     if (result.ok) {
       showToast("Added", "success")
       router.refresh()
@@ -40,7 +41,11 @@ export default function DomainNodesClient({
     ;[reordered[currentIndex], reordered[target]] = [reordered[target], reordered[currentIndex]]
     const otherLevel = items.filter((n) => n.level !== item.level)
     setItems(item.level === "primary" ? [...reordered, ...otherLevel] : [...otherLevel, ...reordered])
-    await reorderDomainNodes(reordered.map((n) => n.id))
+    const result = await callAction(() => reorderDomainNodes(reordered.map((n) => n.id)))
+    if (!result.ok) {
+      setItems(items)
+      showToast(result.error ?? "Couldn't save the new order.", "error")
+    }
   }
 
   const primary = items.filter((n) => n.level === "primary")
@@ -90,7 +95,7 @@ export default function DomainNodesClient({
                   }
                   onSave={(fd) => updateDomainNode(node.id, fd)}
                   onDelete={async () => {
-                    const result = await deleteDomainNode(node.id)
+                    const result = await callAction(() => deleteDomainNode(node.id))
                     if (result.ok) setItems((prev) => prev.filter((n) => n.id !== node.id))
                     return result
                   }}

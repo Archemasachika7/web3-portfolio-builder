@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
-import { uploadAsset, deleteAsset, IMAGE_TYPES } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import type { Achievement, Tag } from "@/shared/database.types"
 
@@ -17,6 +16,7 @@ export interface AchievementWithTags extends Achievement {
 }
 
 export async function listAchievements(): Promise<AchievementWithTags[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("achievements")
@@ -97,29 +97,6 @@ export async function reorderAchievements(orderedIds: string[]): Promise<ActionR
   if (failed?.error) return { ok: false, error: failed.error.message }
   revalidatePath("/admin/achievements")
   return { ok: true, error: null }
-}
-
-export async function uploadAchievementImage(
-  id: string,
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-  const result = await uploadAsset({
-    file,
-    folder: `ACHIEVEMENTS/${id}`,
-    allowedTypes: IMAGE_TYPES,
-    filenameOverride: `image.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`
-  })
-  if (result.error || !result.path) return { path: null, error: result.error }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("achievements").update({ image_path: result.path }).eq("id", id)
-  if (error) return { path: null, error: "Saved file but failed to update the record." }
-
-  if (previousPath && previousPath !== result.path) await deleteAsset(previousPath)
-  revalidatePath("/admin/achievements")
-  return { path: result.path, error: null }
 }
 
 function nullableString(value: FormDataEntryValue | null): string | null {

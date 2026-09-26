@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
-import { uploadAsset, deleteAsset, IMAGE_TYPES, PDF_TYPES } from "@/lib/storage"
+import { deleteAsset } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import type { Certificate, Tag } from "@/shared/database.types"
 
@@ -17,6 +17,7 @@ export interface CertificateWithTags extends Certificate {
 }
 
 export async function listCertificates(): Promise<CertificateWithTags[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("certificates")
@@ -77,57 +78,21 @@ export async function updateCertificate(id: string, formData: FormData): Promise
   return { ok: true, error: null }
 }
 
-export async function deleteCertificate(id: string, filePath: string | null, thumbPath: string | null): Promise<ActionResult> {
+export async function deleteCertificate(id: string): Promise<ActionResult> {
   const user = await requireAdminSession()
   const supabase = createAdminClient()
-  const { error } = await supabase.from("certificates").delete().eq("id", id)
+  const { data, error } = await supabase
+    .from("certificates")
+    .delete()
+    .eq("id", id)
+    .select("certificate_file_path, thumbnail_path")
+    .maybeSingle()
   if (error) return { ok: false, error: error.message }
-  if (filePath) await deleteAsset(filePath)
-  if (thumbPath) await deleteAsset(thumbPath)
+  if (data?.certificate_file_path) await deleteAsset(data.certificate_file_path)
+  if (data?.thumbnail_path) await deleteAsset(data.thumbnail_path)
   await logActivity({ entityType: "certificate", entityId: id, action: "deleted", actor: user.email })
   revalidatePath("/admin/certificates")
   return { ok: true, error: null }
-}
-
-export async function uploadCertificateFile(
-  id: string,
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-  const result = await uploadAsset({ file, folder: `CERTIFICATES/${id}`, allowedTypes: PDF_TYPES })
-  if (result.error || !result.path) return { path: null, error: result.error }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("certificates").update({ certificate_file_path: result.path }).eq("id", id)
-  if (error) return { path: null, error: "Saved file but failed to update the record." }
-
-  if (previousPath && previousPath !== result.path) await deleteAsset(previousPath)
-  revalidatePath("/admin/certificates")
-  return { path: result.path, error: null }
-}
-
-export async function uploadCertificateThumbnail(
-  id: string,
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-  const result = await uploadAsset({
-    file,
-    folder: `CERTIFICATES/${id}`,
-    allowedTypes: IMAGE_TYPES,
-    filenameOverride: `thumbnail.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`
-  })
-  if (result.error || !result.path) return { path: null, error: result.error }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("certificates").update({ thumbnail_path: result.path }).eq("id", id)
-  if (error) return { path: null, error: "Saved file but failed to update the record." }
-
-  if (previousPath && previousPath !== result.path) await deleteAsset(previousPath)
-  revalidatePath("/admin/certificates")
-  return { path: result.path, error: null }
 }
 
 function nullableString(value: FormDataEntryValue | null): string | null {

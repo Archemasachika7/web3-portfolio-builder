@@ -1,19 +1,18 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
-import FileDropzone from "@/components/admin/FileDropzone"
+import UploadField from "@/components/admin/UploadField"
 import { useToast } from "@/components/admin/Toast"
-import { RESUME_TYPES } from "@/lib/storageConstants"
-import { publicAssetUrl } from "@/lib/publicUrl"
-import { createResume, updateResume, deleteResume, setCurrentResume, uploadResumeFile } from "./actions"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
+import { createResume, updateResume, deleteResume, setCurrentResume } from "./actions"
 import type { ResumeWithTags } from "./actions"
 import type { Tag } from "@/shared/database.types"
 import styles from "../shared-list.module.css"
 
 export default function ResumesClient({ resumes: initial, allTags }: { resumes: ResumeWithTags[]; allTags: Tag[] }) {
-  const [items, setItems] = useState(initial)
+  const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
   const router = useRouter()
 
@@ -24,7 +23,7 @@ export default function ResumesClient({ resumes: initial, allTags }: { resumes: 
           type="button"
           className="btn btn-primary"
           onClick={async () => {
-            const result = await createResume()
+            const result = await callAction(() => createResume())
             if (result.ok) router.refresh()
             else showToast(result.error ?? "Failed", "error")
           }}
@@ -51,7 +50,7 @@ export default function ResumesClient({ resumes: initial, allTags }: { resumes: 
               }
               onSave={(fd) => updateResume(r.id, fd)}
               onDelete={async () => {
-                const result = await deleteResume(r.id, r.file_path)
+                const result = await callAction(() => deleteResume(r.id))
                 if (result.ok) setItems((prev) => prev.filter((x) => x.id !== r.id))
                 return result
               }}
@@ -101,22 +100,7 @@ export default function ResumesClient({ resumes: initial, allTags }: { resumes: 
 
               <div className="field">
                 <label>PDF file</label>
-                <FileDropzone
-                  accept={RESUME_TYPES.join(",")}
-                  hint="PDF (or DOCX), up to 25MB"
-                  currentLabel={r.file_path || null}
-                  onUpload={(file) => uploadResumeFile(r.id, r.slug, r.file_path || null, file)}
-                />
-                {r.file_path && (
-                  <div className={styles.fileActions}>
-                    <a href={publicAssetUrl(r.file_path) ?? "#"} target="_blank" rel="noreferrer" className="btn">
-                      Preview
-                    </a>
-                    <a href={publicAssetUrl(r.file_path) ?? "#"} download className="btn">
-                      Download
-                    </a>
-                  </div>
-                )}
+                <UploadField kind="resume-file" recordId={r.id} currentPath={r.file_path || null} />
               </div>
 
               <div className={styles.inlineActions}>
@@ -129,7 +113,7 @@ export default function ResumesClient({ resumes: initial, allTags }: { resumes: 
                     type="button"
                     className="btn"
                     onClick={async () => {
-                      const result = await setCurrentResume(r.id)
+                      const result = await callAction(() => setCurrentResume(r.id))
                       if (result.ok) {
                         setItems((prev) => prev.map((x) => ({ ...x, is_current: x.id === r.id })))
                         showToast("Set as current", "success")

@@ -1,12 +1,12 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { uploadAsset, deleteAsset, uniqueFilename, IMAGE_TYPES, VIDEO_TYPES, PDF_TYPES } from "@/lib/storage"
+import { deleteAsset, PUBLIC_BUCKET } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import { requireAdminSession } from "@/lib/auth"
 import type { Project, ProjectMedia, Report, Tag } from "@/shared/database.types"
+import { missingRequirements } from "@/lib/projectReadiness"
 
 export interface ActionResult {
   ok: boolean
@@ -20,26 +20,8 @@ export interface ProjectListItem extends Project {
   missing: string[]
 }
 
-/** Same rules as the DB's enforce_project_publish_requirements trigger — kept in one place so the list, the editor banner, and the publish action never drift apart. */
-function missingRequirements(p: {
-  title: string | null
-  short_bio: string | null
-  thumbnail_path: string | null
-  project_url: string | null
-  tagCount: number
-  publishedReportCount: number
-}): string[] {
-  const missing: string[] = []
-  if (!p.title?.trim()) missing.push("Title")
-  if (!p.short_bio?.trim()) missing.push("Short bio")
-  if (!p.thumbnail_path) missing.push("Thumbnail")
-  if (!p.project_url?.trim()) missing.push("Project link")
-  if (p.tagCount === 0) missing.push("Tags")
-  if (p.publishedReportCount === 0) missing.push("Published report")
-  return missing
-}
-
 export async function listProjects(): Promise<ProjectListItem[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("projects")
@@ -74,6 +56,7 @@ export interface ProjectDetail extends Project {
 }
 
 export async function getProject(id: string): Promise<ProjectDetail | null> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("projects")
@@ -106,37 +89,41 @@ function slugify(input: string): string {
     .replace(/-+/g, "-")
 }
 
-export async function createProject(formData: FormData) {
-  await requireAdminSession()
-  const title = String(formData.get("title") ?? "").trim()
-  if (!title) return
+export async function createProject(title = "Untitled Project"): Promise<ActionResult & { id?: string }> {
+  const user = await requireAdminSession()
+  const clean = title.trim() || "Untitled Project"
 
   const supabase = createAdminClient()
-  const baseSlug = slugify(title) || "untitled"
-  let slug = baseSlug
-  let attempt = 1
-  // Guarantee a unique slug rather than surfacing a constraint error.
-  while (true) {
-    const { data } = await supabase.from("projects").select("id").eq("slug", slug).maybeSingle()
-    if (!data) break
-    attempt += 1
-    slug = `${baseSlug}-${attempt}`
+  const baseSlug = slugify(clean) || "untitled"
+
+  // One query for every slug already taken with this base, instead of
+  // probing them one round trip at a time.
+  const { data: taken, error: lookupError } = await supabase
+    .from("projects")
+    .select("slug")
+    .like("slug", `${baseSlug}%`)
+  if (lookupError) {
+    console.error("createProject", lookupError.message)
+    return { ok: false, error: "Couldn't create the project: " + lookupError.message }
   }
+  const used = new Set((taken ?? []).map((r) => r.slug as string))
+  let slug = baseSlug
+  for (let n = 2; used.has(slug); n++) slug = `${baseSlug}-${n}`
 
   const { data: inserted, error } = await supabase
     .from("projects")
-    .insert({ title, slug, status: "draft", published: false })
+    .insert({ title: clean, slug, status: "draft", published: false })
     .select("id")
     .single()
 
   if (error || !inserted) {
     console.error("createProject", error?.message)
-    return
+    return { ok: false, error: "Couldn't create the project: " + (error?.message ?? "unknown error") }
   }
 
-  await logActivity({ entityType: "project", entityId: inserted.id, action: "created" })
+  await logActivity({ entityType: "project", entityId: inserted.id, action: "created", actor: user.email })
   revalidatePath("/admin/projects")
-  redirect(`/admin/projects/${inserted.id}`)
+  return { ok: true, error: null, id: inserted.id }
 }
 
 export async function updateProjectOverview(id: string, formData: FormData): Promise<ActionResult> {
@@ -200,6 +187,7 @@ export interface PublishCheck {
 }
 
 export async function checkPublishRequirements(id: string): Promise<PublishCheck> {
+  await requireAdminSession()
   const project = await getProject(id)
   if (!project) return { canPublish: false, missing: ["Project not found"] }
 
@@ -244,19 +232,34 @@ export async function deleteProject(id: string): Promise<ActionResult> {
   const user = await requireAdminSession()
   const supabase = createAdminClient()
 
-  const project = await getProject(id)
-  const { error } = await supabase.from("projects").delete().eq("id", id)
+  // Collect the project's files first: media and report rows cascade away
+  // with the project, and Storage isn't part of that FK graph.
+  const [{ data: media }, { data: reports }] = await Promise.all([
+    supabase.from("project_media").select("storage_path").eq("project_id", id),
+    supabase.from("reports").select("file_path").eq("project_id", id)
+  ])
+
+  const { data: deleted, error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", id)
+    .select("thumbnail_path, hero_media_path")
+    .maybeSingle()
   if (error) {
     console.error("deleteProject", error.message)
     return { ok: false, error: error.message }
   }
 
-  // Best-effort cleanup of the project's own image fields. project_media
-  // and reports rows cascade-delete at the DB level; their Storage
-  // objects are cleaned up separately since Storage isn't part of the
-  // FK graph. Orphans here are visible and removable from Storage Manager.
-  if (project?.thumbnail_path) await deleteAsset(project.thumbnail_path)
-  if (project?.hero_media_path) await deleteAsset(project.hero_media_path)
+  const paths = [
+    deleted?.thumbnail_path,
+    deleted?.hero_media_path,
+    ...(media ?? []).map((m) => m.storage_path as string),
+    ...(reports ?? []).map((r) => r.file_path as string)
+  ].filter((p): p is string => !!p && (p.startsWith("PROJECTS/") || p.startsWith("REPORTS/")))
+  if (paths.length) {
+    const { error: storageError } = await supabase.storage.from(PUBLIC_BUCKET).remove(paths)
+    if (storageError) console.error("deleteProject storage", storageError.message)
+  }
 
   await logActivity({ entityType: "project", entityId: id, action: "deleted", actor: user.email })
   revalidatePath("/admin/projects")
@@ -265,16 +268,13 @@ export async function deleteProject(id: string): Promise<ActionResult> {
 
 /** Bulk delete for clearing out draft/junk projects from the list in one go. */
 export async function deleteProjects(ids: string[]): Promise<ActionResult> {
+  await requireAdminSession()
   if (ids.length === 0) return { ok: true, error: null }
 
-  const failures: string[] = []
-  for (const id of ids) {
-    const result = await deleteProject(id)
-    if (!result.ok) failures.push(result.error ?? id)
-  }
-
+  const results = await Promise.all(ids.map((id) => deleteProject(id)))
+  const failures = results.filter((r) => !r.ok)
   if (failures.length > 0) {
-    return { ok: false, error: `Failed to delete ${failures.length} of ${ids.length}: ${failures[0]}` }
+    return { ok: false, error: `Failed to delete ${failures.length} of ${ids.length}: ${failures[0].error}` }
   }
   return { ok: true, error: null }
 }
@@ -301,90 +301,19 @@ export async function setProjectTags(id: string, tagIds: string[]): Promise<Acti
 
 // ---- Images (thumbnail / hero) ----------------------------------------
 
-export async function uploadProjectImage(
-  projectId: string,
-  slug: string,
-  field: "thumbnail_path" | "hero_media_path",
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-
-  const name = field === "thumbnail_path" ? "thumbnail" : "hero"
-  // Thumbnail is a card/list preview image only. Hero can be a still
-  // image or a motion asset, matching what the public project detail
-  // page's hero area supports.
-  const allowedTypes = field === "thumbnail_path" ? IMAGE_TYPES : [...IMAGE_TYPES, ...VIDEO_TYPES]
-  const result = await uploadAsset({
-    file,
-    folder: `PROJECTS/${slug}`,
-    allowedTypes,
-    filenameOverride: `${name}.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`
-  })
-
-  if (result.error || !result.path) return { path: null, error: result.error }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("projects").update({ [field]: result.path }).eq("id", projectId)
-  if (error) return { path: null, error: "Saved file but failed to update the project record." }
-
-  if (previousPath && previousPath !== result.path) await deleteAsset(previousPath)
-
-  revalidatePath(`/admin/projects/${projectId}`)
-  return { path: result.path, error: null }
-}
-
-/**
- * Records a hero media path already uploaded via /api/upload (the
- * XHR-with-progress path large video files use) — this only does the DB
- * write and old-asset cleanup, no upload.
- */
-export async function attachProjectHeroMedia(
-  projectId: string,
-  path: string,
-  previousPath: string | null
-): Promise<ActionResult> {
-  await requireAdminSession()
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("projects").update({ hero_media_path: path }).eq("id", projectId)
-  if (error) return { ok: false, error: error.message }
-  if (previousPath && previousPath !== path) await deleteAsset(previousPath)
-  revalidatePath(`/admin/projects/${projectId}`)
-  return { ok: true, error: null }
-}
-
-/** Same idea as attachProjectHeroMedia but for a new gallery item — the file is already in Storage, this just creates the project_media row. */
-export async function attachProjectMedia(
-  projectId: string,
-  mediaType: ProjectMedia["media_type"],
-  path: string
-): Promise<ActionResult> {
-  await requireAdminSession()
-  const supabase = createAdminClient()
-  const { count } = await supabase
-    .from("project_media")
-    .select("id", { count: "exact", head: true })
-    .eq("project_id", projectId)
-
-  const { error } = await supabase.from("project_media").insert({
-    project_id: projectId,
-    media_type: mediaType,
-    storage_path: path,
-    display_order: count ?? 0
-  })
-  if (error) return { ok: false, error: error.message }
-  revalidatePath(`/admin/projects/${projectId}`)
-  return { ok: true, error: null }
-}
-
 // ---- Project media ------------------------------------------------------
 
-export async function deleteProjectMedia(mediaId: string, projectId: string, storagePath: string): Promise<ActionResult> {
+export async function deleteProjectMedia(mediaId: string, projectId: string): Promise<ActionResult> {
   await requireAdminSession()
   const supabase = createAdminClient()
-  const { error } = await supabase.from("project_media").delete().eq("id", mediaId)
+  const { data, error } = await supabase
+    .from("project_media")
+    .delete()
+    .eq("id", mediaId)
+    .select("storage_path")
+    .maybeSingle()
   if (error) return { ok: false, error: error.message }
-  await deleteAsset(storagePath)
+  if (data?.storage_path) await deleteAsset(data.storage_path)
   revalidatePath(`/admin/projects/${projectId}`)
   return { ok: true, error: null }
 }
@@ -404,42 +333,12 @@ export async function reorderProjectMedia(projectId: string, orderedIds: string[
 
 // ---- Reports ------------------------------------------------------------
 
-export async function uploadProjectReport(
-  projectId: string,
-  slug: string,
-  title: string,
-  file: File
-): Promise<ActionResult> {
-  await requireAdminSession()
-  const result = await uploadAsset({
-    file,
-    folder: `REPORTS/${slug}`,
-    allowedTypes: PDF_TYPES,
-    filenameOverride: uniqueFilename(file.name)
-  })
-  if (result.error || !result.path) return { ok: false, error: result.error }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("reports").insert({
-    project_id: projectId,
-    title: title || file.name,
-    file_path: result.path,
-    file_type: "pdf",
-    file_size: file.size,
-    published: true
-  })
-  if (error) return { ok: false, error: error.message }
-
-  revalidatePath(`/admin/projects/${projectId}`)
-  return { ok: true, error: null }
-}
-
-export async function deleteProjectReport(reportId: string, projectId: string, filePath: string): Promise<ActionResult> {
+export async function deleteProjectReport(reportId: string, projectId: string): Promise<ActionResult> {
   await requireAdminSession()
   const supabase = createAdminClient()
-  const { error } = await supabase.from("reports").delete().eq("id", reportId)
+  const { data, error } = await supabase.from("reports").delete().eq("id", reportId).select("file_path").maybeSingle()
   if (error) return { ok: false, error: error.message }
-  await deleteAsset(filePath)
+  if (data?.file_path) await deleteAsset(data.file_path)
   revalidatePath(`/admin/projects/${projectId}`)
   return { ok: true, error: null }
 }

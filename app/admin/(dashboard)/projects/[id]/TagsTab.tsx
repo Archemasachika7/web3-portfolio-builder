@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react"
 import type { ProjectDetail } from "../actions"
 import { setProjectTags } from "../actions"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
 import type { Tag } from "@/shared/database.types"
 import styles from "./editor.module.css"
 
@@ -33,7 +34,7 @@ export default function TagsTab({ project, allTags }: { project: ProjectDetail; 
 
   function handleSave() {
     startTransition(async () => {
-      const result = await setProjectTags(project.id, [...selected])
+      const result = await callAction(() => setProjectTags(project.id, [...selected]))
       showToast(result.ok ? "Tags saved" : result.error ?? "Save failed", result.ok ? "success" : "error")
     })
   }

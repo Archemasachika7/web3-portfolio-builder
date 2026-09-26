@@ -22,6 +22,7 @@ function slugify(input: string): string {
 }
 
 export async function listTags(): Promise<Tag[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("tags")

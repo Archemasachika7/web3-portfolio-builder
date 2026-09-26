@@ -42,15 +42,15 @@ async function listRecursive(
   const { data, error } = await supabase.storage.from(PUBLIC_BUCKET).list(prefix, { limit: 1000 })
   if (error || !data) return []
 
-  const results: StorageObjectInfo[] = []
+  const files: StorageObjectInfo[] = []
+  const folders: string[] = []
   for (const entry of data) {
     const fullPath = prefix ? `${prefix}/${entry.name}` : entry.name
-    const isFolder = entry.id === null // Supabase convention: "folders" are synthetic entries with null id
-    if (isFolder) {
-      const nested = await listRecursive(supabase, fullPath)
-      results.push(...nested)
+    // Supabase convention: "folders" are synthetic entries with a null id.
+    if (entry.id === null) {
+      folders.push(fullPath)
     } else {
-      results.push({
+      files.push({
         path: fullPath,
         name: entry.name,
         folder: prefix.split("/")[0] || "Other",
@@ -60,10 +60,13 @@ async function listRecursive(
       })
     }
   }
-  return results
+  // Sibling folders are listed in parallel rather than one round trip at a time.
+  const nested = await Promise.all(folders.map((f) => listRecursive(supabase, f)))
+  return files.concat(...nested)
 }
 
 export async function listStorageObjects(): Promise<StorageObjectInfo[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const perFolder = await Promise.all(TOP_LEVEL_FOLDERS.map((folder) => listRecursive(supabase, folder)))
   return perFolder.flat()
@@ -75,6 +78,7 @@ export interface UsageEntry {
 
 /** Cross-references every storage_path-like column across every table so Storage Manager can warn before deleting a file still in use. */
 export async function buildUsageIndex(): Promise<Map<string, UsageEntry[]>> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const index = new Map<string, UsageEntry[]>()
 

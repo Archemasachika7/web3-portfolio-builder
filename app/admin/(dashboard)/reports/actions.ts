@@ -17,6 +17,7 @@ export interface ReportWithProject extends Report {
 }
 
 export async function listAllReports(): Promise<ReportWithProject[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("reports")
@@ -41,12 +42,12 @@ export async function toggleReportPublished(id: string, published: boolean): Pro
   return { ok: true, error: null }
 }
 
-export async function deleteReport(id: string, filePath: string): Promise<ActionResult> {
+export async function deleteReport(id: string): Promise<ActionResult> {
   const user = await requireAdminSession()
   const supabase = createAdminClient()
-  const { error } = await supabase.from("reports").delete().eq("id", id)
+  const { data, error } = await supabase.from("reports").delete().eq("id", id).select("file_path").maybeSingle()
   if (error) return { ok: false, error: error.message }
-  if (filePath) await deleteAsset(filePath)
+  if (data?.file_path) await deleteAsset(data.file_path)
   await logActivity({ entityType: "report", entityId: id, action: "deleted", actor: user.email })
   revalidatePath("/admin/reports")
   return { ok: true, error: null }

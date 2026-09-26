@@ -1,4 +1,6 @@
 import LoginForm from "./LoginForm"
+import ConfigError from "@/components/admin/ConfigError"
+import { missingEnv } from "@/lib/env"
 import styles from "./login.module.css"
 
 export const metadata = {
@@ -10,6 +12,9 @@ export default function LoginPage({
 }: {
   searchParams: { next?: string }
 }) {
+  const missing = missingEnv()
+  if (missing.length > 0) return <ConfigError missing={missing} />
+
   const next = searchParams.next && searchParams.next.startsWith("/admin") ? searchParams.next : "/admin"
 
   return (

@@ -22,7 +22,12 @@ export default function Topbar({
   const initial = userEmail?.trim().charAt(0).toUpperCase() || "A"
 
   async function handleLogout() {
-    await signOut()
+    try {
+      await signOut()
+    } catch (e) {
+      // Leave anyway; the login page re-checks the session.
+      console.error(e)
+    }
     router.replace("/admin/login")
     router.refresh()
   }

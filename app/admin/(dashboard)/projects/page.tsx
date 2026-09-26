@@ -1,4 +1,5 @@
-import { listProjects, createProject } from "./actions"
+import { listProjects } from "./actions"
+import NewProjectButton from "./NewProjectButton"
 import ProjectsListClient from "./ProjectsListClient"
 import styles from "./projects.module.css"
 
@@ -15,12 +16,7 @@ export default async function ProjectsPage() {
           <h1 className="page-title">Projects</h1>
           <p className={styles.pageSubtitle}>Manage the portfolio&rsquo;s published and draft case studies.</p>
         </div>
-        <form action={createProject}>
-          <input type="hidden" name="title" value="Untitled Project" />
-          <button type="submit" className={`btn btn-primary ${styles.addProjectBtn}`}>
-            + Add Project
-          </button>
-        </form>
+        <NewProjectButton className={styles.addProjectBtn} label="Add project" />
       </div>
       <ProjectsListClient projects={projects} />
     </div>

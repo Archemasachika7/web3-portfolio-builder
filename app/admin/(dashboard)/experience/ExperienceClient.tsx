@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
-import FileDropzone from "@/components/admin/FileDropzone"
+import UploadField from "@/components/admin/UploadField"
 import { useToast } from "@/components/admin/Toast"
-import { IMAGE_TYPES } from "@/lib/storageConstants"
-import { createExperience, updateExperience, deleteExperience, reorderExperience, uploadExperienceLogo } from "./actions"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
+import { createExperience, updateExperience, deleteExperience, reorderExperience } from "./actions"
 import type { ExperienceWithTags } from "./actions"
 import type { Tag } from "@/shared/database.types"
 import styles from "../shared-list.module.css"
@@ -18,7 +18,7 @@ export default function ExperienceClient({
   experience: ExperienceWithTags[]
   allTags: Tag[]
 }) {
-  const [items, setItems] = useState(initial)
+  const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
   const router = useRouter()
 
@@ -28,7 +28,11 @@ export default function ExperienceClient({
     if (target < 0 || target >= next.length) return
     ;[next[index], next[target]] = [next[target], next[index]]
     setItems(next)
-    await reorderExperience(next.map((e) => e.id))
+    const result = await callAction(() => reorderExperience(next.map((e) => e.id)))
+    if (!result.ok) {
+      setItems(items)
+      showToast(result.error ?? "Couldn't save the new order.", "error")
+    }
   }
 
   return (
@@ -38,7 +42,7 @@ export default function ExperienceClient({
           type="button"
           className="btn btn-primary"
           onClick={async () => {
-            const result = await createExperience()
+            const result = await callAction(() => createExperience())
             if (result.ok) router.refresh()
             else showToast(result.error ?? "Failed", "error")
           }}
@@ -70,7 +74,7 @@ export default function ExperienceClient({
               }
               onSave={(fd) => updateExperience(exp.id, fd)}
               onDelete={async () => {
-                const result = await deleteExperience(exp.id)
+                const result = await callAction(() => deleteExperience(exp.id))
                 if (result.ok) setItems((prev) => prev.filter((e) => e.id !== exp.id))
                 return result
               }}
@@ -149,12 +153,7 @@ export default function ExperienceClient({
 
               <div className="field">
                 <label>Logo</label>
-                <FileDropzone
-                  accept={IMAGE_TYPES.join(",")}
-                  hint="JPG / PNG / WEBP"
-                  currentLabel={exp.logo_path}
-                  onUpload={(file) => uploadExperienceLogo(exp.id, exp.logo_path, file)}
-                />
+                <UploadField kind="experience-logo" recordId={exp.id} currentPath={exp.logo_path} removable />
               </div>
 
               <label className="checkbox-row">

@@ -4,6 +4,7 @@ import { useTransition } from "react"
 import type { ProjectDetail } from "../actions"
 import { updateProjectDisplay } from "../actions"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
 import styles from "./editor.module.css"
 
 export default function DisplayTab({ project }: { project: ProjectDetail }) {
@@ -12,7 +13,7 @@ export default function DisplayTab({ project }: { project: ProjectDetail }) {
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
-      const result = await updateProjectDisplay(project.id, formData)
+      const result = await callAction(() => updateProjectDisplay(project.id, formData))
       showToast(result.ok ? "Saved" : result.error ?? "Save failed", result.ok ? "success" : "error")
     })
   }

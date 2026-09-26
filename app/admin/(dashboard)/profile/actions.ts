@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { uploadAsset, deleteAsset, IMAGE_TYPES } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import { requireAdminSession } from "@/lib/auth"
 import type { Profile } from "@/shared/database.types"
@@ -18,6 +17,7 @@ export interface ResumeOption {
 }
 
 export async function listResumeOptions(): Promise<ResumeOption[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase.from("resumes").select("id, title").order("priority", { ascending: false })
   if (error) {
@@ -28,6 +28,7 @@ export async function listResumeOptions(): Promise<ResumeOption[]> {
 }
 
 export async function getProfile(): Promise<Profile | null> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase.from("profiles").select("*").limit(1).maybeSingle()
   if (error) {
@@ -105,45 +106,6 @@ export async function saveProfile(formData: FormData): Promise<ActionResult> {
 
   revalidatePath("/admin/profile")
   return { ok: true, error: null }
-}
-
-export async function uploadProfilePicture(
-  profileId: string,
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "webp"
-  const result = await uploadAsset({
-    file,
-    folder: "PROFILE",
-    allowedTypes: IMAGE_TYPES,
-    filenameOverride: `profile-picture.${ext}`
-  })
-
-  if (result.error || !result.path) {
-    return { path: null, error: result.error }
-  }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase
-    .from("profiles")
-    .update({ profile_image_path: result.path })
-    .eq("id", profileId)
-
-  if (error) {
-    console.error("uploadProfilePicture db update", error.message)
-    return { path: null, error: "Uploaded, but saving the new path failed. Try again." }
-  }
-
-  if (previousPath && previousPath !== result.path) {
-    await deleteAsset(previousPath)
-  }
-
-  await logActivity({ entityType: "profile", entityId: profileId, action: "uploaded", detail: "profile picture" })
-  revalidatePath("/admin/profile")
-  return { path: result.path, error: null }
 }
 
 function nullableString(value: FormDataEntryValue | null): string | null {

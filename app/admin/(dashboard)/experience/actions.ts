@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
-import { uploadAsset, deleteAsset, IMAGE_TYPES } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import type { Experience, Tag } from "@/shared/database.types"
 
@@ -17,6 +16,7 @@ export interface ExperienceWithTags extends Experience {
 }
 
 export async function listExperience(): Promise<ExperienceWithTags[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("experience")
@@ -100,29 +100,6 @@ export async function reorderExperience(orderedIds: string[]): Promise<ActionRes
   if (failed?.error) return { ok: false, error: failed.error.message }
   revalidatePath("/admin/experience")
   return { ok: true, error: null }
-}
-
-export async function uploadExperienceLogo(
-  id: string,
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-  const result = await uploadAsset({
-    file,
-    folder: `EXPERIENCE/${id}`,
-    allowedTypes: IMAGE_TYPES,
-    filenameOverride: `logo.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`
-  })
-  if (result.error || !result.path) return { path: null, error: result.error }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("experience").update({ logo_path: result.path }).eq("id", id)
-  if (error) return { path: null, error: "Saved file but failed to update the record." }
-
-  if (previousPath && previousPath !== result.path) await deleteAsset(previousPath)
-  revalidatePath("/admin/experience")
-  return { path: result.path, error: null }
 }
 
 function nullableString(value: FormDataEntryValue | null): string | null {
