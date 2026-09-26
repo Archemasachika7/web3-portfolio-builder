@@ -27,6 +27,10 @@ export async function callAction<T extends ActionOutcome>(fn: () => Promise<T>):
       return { ok: false, error: "You're offline. Reconnect and try again." }
     }
     const message = e instanceof Error ? e.message : ""
+    // A tab opened before a deploy calls actions the new build no longer has.
+    if (/server action/i.test(message) && /find|not found/i.test(message)) {
+      return { ok: false, error: "The admin was updated since this page was opened. Reload the page and try again." }
+    }
     if (/fetch|network|load failed/i.test(message)) {
       return { ok: false, error: "Couldn't reach the server. Check your connection and try again." }
     }

@@ -790,3 +790,37 @@ input[type="radio"] {
   gap: var(--sp-2);
   flex-wrap: wrap;
 }
+
+/* ---- new-version notice ---- */
+
+.update-notice {
+  position: fixed;
+  left: 50%;
+  bottom: var(--sp-4);
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  max-width: calc(100vw - 32px);
+  padding: 10px 12px 10px 16px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--bg-raised);
+  box-shadow: var(--shadow-float);
+  font-size: var(--fs-00);
+  animation: update-in var(--duration-normal) var(--ease-emphasis);
+}
+
+.update-notice .btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+@keyframes update-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
