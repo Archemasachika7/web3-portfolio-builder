@@ -18,17 +18,42 @@
   overflow: hidden;
 }
 
+/* The portfolio's coordinate grid, faint, fading toward the form. */
+.brandPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: linear-gradient(135deg, #000 20%, transparent 85%);
+  mask-image: linear-gradient(135deg, #000 20%, transparent 85%);
+  pointer-events: none;
+}
+
 .brandTop {
   position: relative;
   z-index: 1;
 }
 
 .mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-mono);
   font-size: var(--fs-000);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--panel-dark-ink-muted);
+}
+
+.mark::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(226, 102, 47, 0.18);
 }
 
 .brandMiddle {
@@ -39,10 +64,18 @@
 
 .brandName {
   margin: 0;
-  font-size: var(--fs-4);
+  font-size: clamp(2.75rem, 5vw, 4.25rem);
   font-weight: 600;
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  animation: rise var(--duration-slow) var(--ease-emphasis) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
 }
 
 .brandLine {
@@ -65,6 +98,23 @@
   display: block;
   height: 1px;
   background: rgba(255, 255, 255, 0.16);
+  transform-origin: left;
+  animation: draw 900ms var(--ease-cinematic) both;
+}
+
+.brandRules span:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.brandRules span:nth-child(3) {
+  animation-delay: 180ms;
+  background: var(--accent);
+}
+
+@keyframes draw {
+  from {
+    transform: scaleX(0);
+  }
 }
 
 .brandRules span:nth-child(1) {
@@ -91,7 +141,13 @@
 
 .formInner {
   width: 100%;
-  max-width: 340px;
+  max-width: 360px;
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--radius-modal);
+  background: var(--bg-raised);
+  border: var(--line-thickness) solid var(--line);
+  box-shadow: var(--shadow-raised);
+  animation: rise var(--duration-slow) var(--ease-emphasis) 60ms both;
 }
 
 .formEyebrow {
@@ -122,6 +178,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
+}
+
+.form :global(.btn-primary) {
+  min-height: 42px;
+  margin-top: var(--sp-1);
 }
 
 .error {
