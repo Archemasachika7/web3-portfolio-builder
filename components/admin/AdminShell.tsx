@@ -6,6 +6,7 @@ import Sidebar from "./Sidebar"
 import Topbar from "./Topbar"
 import PageHeader from "./PageHeader"
 import RouteProgress from "./RouteProgress"
+import UpdateNotice from "./UpdateNotice"
 import { ToastProvider } from "./Toast"
 import { metaForPathname } from "./nav"
 import styles from "./AdminShell.module.css"
@@ -55,6 +56,7 @@ export function ShellFrame({
         <div className={styles.main}>
           <Topbar pathname={pathname} userEmail={userEmail} onMenuClick={() => setDrawerOpen((v) => !v)} />
           <RouteProgress pathname={pathname} />
+          <UpdateNotice />
           <main key={pathname} className={`${styles.content} page-enter`}>
             {header && meta.item && (
               <PageHeader eyebrow={meta.group} title={meta.item.label} description={meta.item.description} />
