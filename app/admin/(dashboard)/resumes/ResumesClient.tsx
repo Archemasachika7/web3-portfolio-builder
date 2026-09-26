@@ -1,12 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
 import UploadField from "@/components/admin/UploadField"
+import CreateFromUpload from "@/components/admin/CreateFromUpload"
 import { useToast } from "@/components/admin/Toast"
 import { callAction } from "@/lib/callAction"
 import { useServerState } from "@/lib/useServerState"
-import { createResume, updateResume, deleteResume, setCurrentResume } from "./actions"
+import {
+  createResume,
+  createResumeFromFile,
+  publishUploadedResume,
+  updateResume,
+  deleteResume,
+  setCurrentResume
+} from "./actions"
 import type { ResumeWithTags } from "./actions"
 import type { Tag } from "@/shared/database.types"
 import styles from "../shared-list.module.css"
@@ -14,21 +23,39 @@ import styles from "../shared-list.module.css"
 export default function ResumesClient({ resumes: initial, allTags }: { resumes: ResumeWithTags[]; allTags: Tag[] }) {
   const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
+  // The entry just added opens itself, so it's obvious where to type.
+  const [newId, setNewId] = useState<string | null>(null)
   const router = useRouter()
 
   return (
     <div className={styles.page}>
+      <CreateFromUpload
+        kinds={["resume-file"]}
+        kindFor={() => "resume-file"}
+        label="Drop your resume PDF here to post it, or click to browse"
+        hint="PDF (or DOCX) up to 25 MB · goes live on the site's resume page"
+        create={createResumeFromFile}
+        finish={publishUploadedResume}
+        discard={deleteResume}
+        onCreated={setNewId}
+        successMessage="Resume posted — it's live on the site"
+      />
+
       <div className={styles.toolbar}>
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn"
           onClick={async () => {
             const result = await callAction(() => createResume())
-            if (result.ok) router.refresh()
+            if (result.ok) {
+              if (result.id) setNewId(result.id)
+              showToast("Added — fill in the details below", "success")
+              router.refresh()
+            }
             else showToast(result.error ?? "Failed", "error")
           }}
         >
-          Add resume
+          Add without a file
         </button>
       </div>
 
@@ -39,6 +66,8 @@ export default function ResumesClient({ resumes: initial, allTags }: { resumes: 
           {items.map((r) => (
             <EditableCard
               key={r.id}
+              startOpen={r.id === newId}
+              autoFocus={r.id === newId}
               summary={r.title}
               badge={
                 <>

@@ -1,15 +1,17 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath } from "@/lib/revalidate"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
 import { deleteAsset } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import type { Certificate, Tag } from "@/shared/database.types"
+import { titleFromFileName } from "@/lib/names"
 
 export interface ActionResult {
   ok: boolean
   error: string | null
+  id?: string
 }
 
 export interface CertificateWithTags extends Certificate {
@@ -37,13 +39,41 @@ export async function createCertificate(): Promise<ActionResult> {
   const user = await requireAdminSession()
   const supabase = createAdminClient()
   const { count } = await supabase.from("certificates").select("id", { count: "exact", head: true })
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("certificates")
     .insert({ title: "New certificate", issuer: "Issuer", published: false, sort_order: count ?? 0 })
+    .select("id")
+    .single()
   if (error) return { ok: false, error: error.message }
   await logActivity({ entityType: "certificate", action: "created", actor: user.email })
   revalidatePath("/admin/certificates")
-  return { ok: true, error: null }
+  return { ok: true, error: null, id: created?.id as string | undefined }
+}
+
+/** First step of "drop a picture or PDF to post a certificate". */
+export async function createCertificateFromFile(fileName: string): Promise<ActionResult> {
+  const user = await requireAdminSession()
+  const supabase = createAdminClient()
+  const { count } = await supabase.from("certificates").select("id", { count: "exact", head: true })
+  const { data: created, error } = await supabase
+    .from("certificates")
+    .insert({ title: titleFromFileName(String(fileName ?? "")), issuer: "", published: false, sort_order: count ?? 0 })
+    .select("id")
+    .single()
+  if (error) return { ok: false, error: error.message }
+  await logActivity({ entityType: "certificate", entityId: created?.id, action: "created", actor: user.email })
+  return { ok: true, error: null, id: created?.id as string | undefined }
+}
+
+/** Puts a just-uploaded certificate live; details can be filled in afterwards. */
+export async function publishCertificate(id: string): Promise<ActionResult> {
+  const user = await requireAdminSession()
+  const supabase = createAdminClient()
+  const { error } = await supabase.from("certificates").update({ published: true }).eq("id", id)
+  if (error) return { ok: false, error: error.message }
+  await logActivity({ entityType: "certificate", entityId: id, action: "published", actor: user.email })
+  revalidatePath("/admin/certificates")
+  return { ok: true, error: null, id }
 }
 
 export async function updateCertificate(id: string, formData: FormData): Promise<ActionResult> {
@@ -63,7 +93,7 @@ export async function updateCertificate(id: string, formData: FormData): Promise
     featured: formData.get("featured") === "on"
   }
 
-  if (!payload.title || !payload.issuer) return { ok: false, error: "Title and issuer are required." }
+  if (!payload.title) return { ok: false, error: "Title is required." }
 
   const { error } = await supabase.from("certificates").update(payload).eq("id", id)
   if (error) return { ok: false, error: error.message }

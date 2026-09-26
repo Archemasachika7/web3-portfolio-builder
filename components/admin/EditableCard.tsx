@@ -18,6 +18,8 @@ export interface EditableCardProps {
   onDelete: () => Promise<{ ok: boolean; error: string | null }>
   deleteWarning?: string
   startOpen?: boolean
+  /** Scroll to this card and focus its first field (for an entry just added). */
+  autoFocus?: boolean
 }
 
 export default function EditableCard({
@@ -27,7 +29,8 @@ export default function EditableCard({
   onSave,
   onDelete,
   deleteWarning = "This cannot be undone.",
-  startOpen = false
+  startOpen = false,
+  autoFocus = false
 }: EditableCardProps) {
   const [open, setOpen] = useState(startOpen)
   // The form stays mounted through the closing animation, then unmounts —
@@ -38,6 +41,19 @@ export default function EditableCard({
   const { showToast } = useToast()
   const deleteDialogRef = useRef<ConfirmDialogHandle>(null)
   const panelId = useId()
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!autoFocus) return
+    // After the panel has expanded, bring it into view and put the cursor in it.
+    const t = setTimeout(() => {
+      const card = cardRef.current
+      if (!card) return
+      card.scrollIntoView({ behavior: "smooth", block: "start" })
+      card.querySelector<HTMLElement>("input:not([type=hidden]):not([type=checkbox]):not([type=file]), textarea")?.focus({ preventScroll: true })
+    }, CLOSE_MS + 50)
+    return () => clearTimeout(t)
+  }, [autoFocus])
 
   useEffect(() => {
     if (open) {
@@ -67,7 +83,7 @@ export default function EditableCard({
   }
 
   return (
-    <div className={`card ${styles.card}`} data-open={open}>
+    <div ref={cardRef} className={`card ${styles.card}`} data-open={open}>
       {/* The toggle and the badge's controls are siblings, not nested:
           a button inside a button is invalid HTML and breaks hydration. */}
       <div className={styles.summaryRow}>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
 import UploadField from "@/components/admin/UploadField"
@@ -20,6 +21,8 @@ export default function ExperienceClient({
 }) {
   const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
+  // The entry just added opens itself, so it's obvious where to type.
+  const [newId, setNewId] = useState<string | null>(null)
   const router = useRouter()
 
   async function move(index: number, direction: -1 | 1) {
@@ -43,7 +46,11 @@ export default function ExperienceClient({
           className="btn btn-primary"
           onClick={async () => {
             const result = await callAction(() => createExperience())
-            if (result.ok) router.refresh()
+            if (result.ok) {
+              if (result.id) setNewId(result.id)
+              showToast("Added — fill in the details below", "success")
+              router.refresh()
+            }
             else showToast(result.error ?? "Failed", "error")
           }}
         >
@@ -58,6 +65,8 @@ export default function ExperienceClient({
           {items.map((exp, index) => (
             <EditableCard
               key={exp.id}
+              startOpen={exp.id === newId}
+              autoFocus={exp.id === newId}
               summary={`${exp.role} — ${exp.organization}`}
               badge={
                 <>

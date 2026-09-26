@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath } from "@/lib/revalidate"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
@@ -9,6 +9,7 @@ import type { HomepageMedia } from "@/shared/database.types"
 export interface ActionResult {
   ok: boolean
   error: string | null
+  id?: string
 }
 
 export async function listHomepageMedia(): Promise<HomepageMedia[]> {
@@ -32,14 +33,16 @@ export async function createHomepageSection(formData: FormData): Promise<ActionR
 
   const supabase = createAdminClient()
   const { count } = await supabase.from("homepage_media").select("id", { count: "exact", head: true })
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("homepage_media")
     .insert({ section_key: sectionKey, media_type: "image", enabled: true, sort_order: count ?? 0 })
+    .select("id")
+    .single()
 
   if (error) return { ok: false, error: error.message }
   await logActivity({ entityType: "homepage_media", action: "created", actor: user.email, detail: sectionKey })
   revalidatePath("/admin/homepage-media")
-  return { ok: true, error: null }
+  return { ok: true, error: null, id: created?.id as string | undefined }
 }
 
 export async function updateHomepageMedia(id: string, formData: FormData): Promise<ActionResult> {

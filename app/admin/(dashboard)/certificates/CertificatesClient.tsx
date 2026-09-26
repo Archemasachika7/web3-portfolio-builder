@@ -1,14 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
 import UploadField from "@/components/admin/UploadField"
+import CreateFromUpload from "@/components/admin/CreateFromUpload"
 import { useToast } from "@/components/admin/Toast"
 import { callAction } from "@/lib/callAction"
 import { useServerState } from "@/lib/useServerState"
 import { publicAssetUrl } from "@/lib/publicUrl"
 import {
   createCertificate,
+  createCertificateFromFile,
+  publishCertificate,
   updateCertificate,
   deleteCertificate
 } from "./actions"
@@ -25,21 +29,39 @@ export default function CertificatesClient({
 }) {
   const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
+  // The entry just added opens itself, so it's obvious where to type.
+  const [newId, setNewId] = useState<string | null>(null)
   const router = useRouter()
 
   return (
     <div className={styles.page}>
+      <CreateFromUpload
+        kinds={["certificate-thumbnail", "certificate-file"]}
+        kindFor={(file) => (/pdf$/i.test(file.type) || /\.pdf$/i.test(file.name) ? "certificate-file" : "certificate-thumbnail")}
+        label="Drop a certificate picture or PDF here to post it, or click to browse"
+        hint="JPG / PNG / WEBP up to 8 MB · PDF up to 25 MB · then add the issuer and a description"
+        create={createCertificateFromFile}
+        finish={publishCertificate}
+        discard={deleteCertificate}
+        onCreated={setNewId}
+        successMessage="Certificate posted — add the details below"
+      />
+
       <div className={styles.toolbar}>
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn"
           onClick={async () => {
             const result = await callAction(() => createCertificate())
-            if (result.ok) router.refresh()
+            if (result.ok) {
+              if (result.id) setNewId(result.id)
+              showToast("Added — fill in the details below", "success")
+              router.refresh()
+            }
             else showToast(result.error ?? "Failed", "error")
           }}
         >
-          Add certificate
+          Add without a file
         </button>
       </div>
 
@@ -50,6 +72,8 @@ export default function CertificatesClient({
           {items.map((c) => (
             <EditableCard
               key={c.id}
+              startOpen={c.id === newId}
+              autoFocus={c.id === newId}
               summary={
                 <span className={styles.certSummary}>
                   {c.thumbnail_path && (
@@ -114,7 +138,7 @@ export default function CertificatesClient({
                 <input name="credential_url" defaultValue={c.credential_url ?? ""} className="input" />
               </div>
               <div className="field">
-                <label>Description</label>
+                <label>Description (shown on the site)</label>
                 <textarea name="description" defaultValue={c.description ?? ""} className="textarea" rows={3} />
               </div>
 
@@ -137,7 +161,7 @@ export default function CertificatesClient({
 
               <div className="grid-2">
                 <div className="field">
-                  <label>Thumbnail image</label>
+                  <label>Picture</label>
                   <UploadField kind="certificate-thumbnail" recordId={c.id} currentPath={c.thumbnail_path} removable />
                 </div>
                 <div className="field">

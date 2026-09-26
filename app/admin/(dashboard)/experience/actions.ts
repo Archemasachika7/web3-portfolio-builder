@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath } from "@/lib/revalidate"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
@@ -9,6 +9,7 @@ import type { Experience, Tag } from "@/shared/database.types"
 export interface ActionResult {
   ok: boolean
   error: string | null
+  id?: string
 }
 
 export interface ExperienceWithTags extends Experience {
@@ -36,13 +37,15 @@ export async function createExperience(): Promise<ActionResult> {
   const user = await requireAdminSession()
   const supabase = createAdminClient()
   const { count } = await supabase.from("experience").select("id", { count: "exact", head: true })
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("experience")
     .insert({ organization: "New organization", role: "Role", published: false, sort_order: count ?? 0 })
+    .select("id")
+    .single()
   if (error) return { ok: false, error: error.message }
   await logActivity({ entityType: "experience", action: "created", actor: user.email })
   revalidatePath("/admin/experience")
-  return { ok: true, error: null }
+  return { ok: true, error: null, id: created?.id as string | undefined }
 }
 
 export async function updateExperience(id: string, formData: FormData): Promise<ActionResult> {

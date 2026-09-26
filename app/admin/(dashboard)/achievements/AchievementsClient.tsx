@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
 import UploadField from "@/components/admin/UploadField"
@@ -25,6 +26,8 @@ export default function AchievementsClient({
 }) {
   const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
+  // The entry just added opens itself, so it's obvious where to type.
+  const [newId, setNewId] = useState<string | null>(null)
   const router = useRouter()
 
   async function move(index: number, direction: -1 | 1) {
@@ -48,7 +51,11 @@ export default function AchievementsClient({
           className="btn btn-primary"
           onClick={async () => {
             const result = await callAction(() => createAchievement())
-            if (result.ok) router.refresh()
+            if (result.ok) {
+              if (result.id) setNewId(result.id)
+              showToast("Added — fill in the details below", "success")
+              router.refresh()
+            }
             else showToast(result.error ?? "Failed", "error")
           }}
         >
@@ -63,6 +70,8 @@ export default function AchievementsClient({
           {items.map((a, index) => (
             <EditableCard
               key={a.id}
+              startOpen={a.id === newId}
+              autoFocus={a.id === newId}
               summary={a.title}
               badge={
                 <>

@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath } from "@/lib/revalidate"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
@@ -9,6 +9,7 @@ import type { Education } from "@/shared/database.types"
 export interface ActionResult {
   ok: boolean
   error: string | null
+  id?: string
 }
 
 export async function listEducation(): Promise<Education[]> {
@@ -29,13 +30,15 @@ export async function createEducation(): Promise<ActionResult> {
   const user = await requireAdminSession()
   const supabase = createAdminClient()
   const { count } = await supabase.from("education").select("id", { count: "exact", head: true })
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("education")
     .insert({ institution: "New institution", published: false, sort_order: count ?? 0 })
+    .select("id")
+    .single()
   if (error) return { ok: false, error: error.message }
   await logActivity({ entityType: "education", action: "created", actor: user.email })
   revalidatePath("/admin/education")
-  return { ok: true, error: null }
+  return { ok: true, error: null, id: created?.id as string | undefined }
 }
 
 export async function updateEducation(id: string, formData: FormData): Promise<ActionResult> {

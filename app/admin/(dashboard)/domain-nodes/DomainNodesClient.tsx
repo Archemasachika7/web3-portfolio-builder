@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import EditableCard from "@/components/admin/EditableCard"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
@@ -19,12 +20,15 @@ export default function DomainNodesClient({
 }) {
   const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
+  // The entry just added opens itself, so it's obvious where to type.
+  const [newId, setNewId] = useState<string | null>(null)
   const router = useRouter()
 
   async function handleCreate(formData: FormData) {
     const result = await callAction(() => createDomainNode(formData))
     if (result.ok) {
-      showToast("Added", "success")
+      if (result.id) setNewId(result.id)
+      showToast("Added — fill in the details below", "success")
       router.refresh()
     } else {
       showToast(result.error ?? "Failed", "error")
@@ -79,6 +83,8 @@ export default function DomainNodesClient({
               levelItems.map((node, index) => (
                 <EditableCard
                   key={node.id}
+                  startOpen={node.id === newId}
+                  autoFocus={node.id === newId}
                   summary={node.label}
                   badge={
                     <>

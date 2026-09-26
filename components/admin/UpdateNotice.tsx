@@ -13,6 +13,7 @@ const CHECK_EVERY_MS = 5 * 60_000
  */
 export default function UpdateNotice() {
   const [stale, setStale] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
     if (!BUILD) return
@@ -42,13 +43,16 @@ export default function UpdateNotice() {
     }
   }, [])
 
-  if (!stale) return null
+  if (!stale || dismissed) return null
 
   return (
     <div className="update-notice" role="status">
       <span>A new version of the admin is available. Reload to use it — save any open edits first.</span>
       <button type="button" className="btn btn-sm btn-primary" onClick={() => window.location.reload()}>
         Reload
+      </button>
+      <button type="button" className="update-notice-close" onClick={() => setDismissed(true)} aria-label="Dismiss">
+        ×
       </button>
     </div>
   )
