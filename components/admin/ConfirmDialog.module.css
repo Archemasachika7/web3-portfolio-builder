@@ -2,27 +2,41 @@
   border: var(--line-thickness) solid var(--line);
   border-radius: var(--radius-modal);
   padding: var(--sp-4);
-  max-width: 420px;
+  max-width: 440px;
   width: calc(100vw - 32px);
   background: var(--bg-raised);
   color: var(--ink);
-  box-shadow: var(--shadow-raised);
-  animation: dialog-in var(--duration-fast) var(--ease-standard);
+  box-shadow: var(--shadow-float);
+}
+
+.dialog[open] {
+  animation: dialog-in var(--duration-normal) var(--ease-emphasis);
 }
 
 .dialog::backdrop {
-  background: rgba(0, 0, 0, 0.4);
-  animation: backdrop-in var(--duration-fast) var(--ease-standard);
+  background: rgba(8, 9, 10, 0.42);
+  animation: backdrop-in var(--duration-normal) var(--ease-standard);
+}
+
+.dialog[data-closing="true"] {
+  animation: dialog-out 140ms var(--ease-standard) forwards;
+}
+
+.dialog[data-closing="true"]::backdrop {
+  animation: backdrop-out 140ms var(--ease-standard) forwards;
 }
 
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: translateY(4px) scale(0.98);
+    transform: translateY(10px) scale(0.97);
   }
+}
+
+@keyframes dialog-out {
   to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
   }
 }
 
@@ -30,8 +44,11 @@
   from {
     opacity: 0;
   }
+}
+
+@keyframes backdrop-out {
   to {
-    opacity: 1;
+    opacity: 0;
   }
 }
 
@@ -39,12 +56,14 @@
   margin: 0 0 var(--sp-2);
   font-size: var(--fs-1);
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .description {
   margin: 0 0 var(--sp-4);
   color: var(--ink-muted);
   font-size: var(--fs-00);
+  line-height: 1.55;
 }
 
 .actions {

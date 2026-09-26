@@ -1,0 +1,68 @@
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--control-h);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--duration-micro) var(--ease-standard),
+    background-color var(--duration-micro) var(--ease-standard);
+}
+
+.toggle:hover {
+  color: var(--ink);
+  background: var(--bg-hover);
+}
+
+.track {
+  position: relative;
+  width: 26px;
+  height: 14px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+
+.knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: transform var(--duration-normal) var(--ease-cinematic);
+}
+
+:global(:root[data-theme="dark"]) .knob {
+  transform: translateX(12px);
+}
+
+/* Both labels render; CSS shows the current one, so SSR is never wrong. */
+.label {
+  display: inline-grid;
+}
+
+.light,
+.dark {
+  grid-area: 1 / 1;
+}
+
+.dark {
+  visibility: hidden;
+}
+
+:global(:root[data-theme="dark"]) .light {
+  visibility: hidden;
+}
+
+:global(:root[data-theme="dark"]) .dark {
+  visibility: visible;
+}

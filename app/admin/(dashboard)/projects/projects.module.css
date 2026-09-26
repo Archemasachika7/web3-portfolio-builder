@@ -4,24 +4,28 @@
   gap: var(--sp-4);
 }
 
+/* Same header grammar as components/admin/PageHeader. */
 .pageHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: var(--sp-3);
   flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: var(--line-thickness) solid var(--line);
 }
 
 .pageSubtitle {
-  margin: 6px 0 0;
+  margin: 10px 0 0;
   color: var(--ink-muted);
   font-size: var(--fs-00);
-  max-width: 56ch;
+  max-width: 62ch;
 }
 
 .addProjectBtn {
-  font-size: var(--fs-0);
-  padding: 12px 20px;
+  min-height: 42px;
+  padding: 0 20px;
+  font-size: var(--fs-00);
   font-weight: 600;
 }
 
