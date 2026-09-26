@@ -38,39 +38,10 @@ export const MODEL_EXTENSIONS = [
   "dae"
 ]
 
-/** `accept` attribute value for a model file input. */
-export const MODEL_ACCEPT = MODEL_EXTENSIONS.map((e) => `.${e}`).join(",")
-
 /** Lowercased extension of a filename, without the dot. */
 export function extensionOf(name: string): string {
   const clean = name.split(/[?#]/)[0]
   const last = clean.split("/").pop() ?? ""
   const dot = last.lastIndexOf(".")
   return dot === -1 ? "" : last.slice(dot + 1).toLowerCase()
-}
-
-export function isModelFile(name: string): boolean {
-  return MODEL_EXTENSIONS.includes(extensionOf(name))
-}
-
-/**
- * Best-effort content type for a model, since the browser rarely supplies
- * one. Only affects how Storage serves the object — the viewer reads it
- * as an ArrayBuffer either way.
- */
-const MODEL_CONTENT_TYPES: Record<string, string> = {
-  glb: "model/gltf-binary",
-  gltf: "model/gltf+json",
-  stl: "model/stl",
-  obj: "model/obj",
-  "3mf": "model/3mf",
-  ply: "application/octet-stream",
-  step: "application/step",
-  stp: "application/step",
-  iges: "application/iges",
-  igs: "application/iges"
-}
-
-export function modelContentType(name: string): string {
-  return MODEL_CONTENT_TYPES[extensionOf(name)] ?? "application/octet-stream"
 }

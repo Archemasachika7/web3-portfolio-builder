@@ -1,35 +1,29 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import Image from "next/image"
-import FileDropzone from "@/components/admin/FileDropzone"
+import UploadField from "@/components/admin/UploadField"
 import { useToast } from "@/components/admin/Toast"
-import { saveProfile, uploadProfilePicture, type ResumeOption } from "./actions"
-import { IMAGE_TYPES } from "@/lib/storageConstants"
-import { publicAssetUrl } from "@/lib/publicUrl"
+import { callAction } from "@/lib/callAction"
+import { saveProfile, type ResumeOption } from "./actions"
 import type { Profile, OtherLink } from "@/shared/database.types"
 import styles from "./profile.module.css"
 
 export default function ProfileForm({
   profile,
-  profilePictureUrl,
   resumeOptions
 }: {
   profile: Profile | null
-  profilePictureUrl: string | null
   resumeOptions: ResumeOption[]
 }) {
   const { showToast } = useToast()
   const [pending, startTransition] = useTransition()
-  const [imagePath, setImagePath] = useState(profile?.profile_image_path ?? null)
-  const [imageUrl, setImageUrl] = useState(profilePictureUrl)
   const [dirty, setDirty] = useState(false)
   const [otherLinks, setOtherLinks] = useState<OtherLink[]>(profile?.other_links ?? [])
 
   function handleSubmit(formData: FormData) {
     formData.set("other_links", JSON.stringify(otherLinks.filter((l) => l.label.trim() && l.url.trim())))
     startTransition(async () => {
-      const result = await saveProfile(formData)
+      const result = await callAction(() => saveProfile(formData))
       if (result.ok) {
         showToast("Saved", "success")
         setDirty(false)
@@ -49,41 +43,13 @@ export default function ProfileForm({
 
       <section className={`card ${styles.section}`}>
         <span className="label">PROFILE PICTURE</span>
-        <div className={styles.pictureRow}>
-          {imageUrl && (
-            <Image
-              src={imageUrl}
-              alt=""
-              width={96}
-              height={96}
-              className={styles.picturePreview}
-            />
-          )}
-          <div className={styles.dropzoneWrap}>
-            <FileDropzone
-              accept={IMAGE_TYPES.join(",")}
-              hint="JPG / JPEG / PNG / WEBP, up to 8MB"
-              disabled={!profile?.id}
-              currentLabel={imagePath}
-              onUpload={async (file) => {
-                if (!profile?.id) return { path: null, error: "Save the profile first." }
-                const result = await uploadProfilePicture(profile.id, imagePath, file)
-                if (result.path) {
-                  setImagePath(result.path)
-                  // Cache-bust: the filename is fixed (profile-picture.*),
-                  // so a replaced image needs a fresh URL to avoid the
-                  // browser/CDN serving the old cached bytes.
-                  const url = publicAssetUrl(result.path)
-                  setImageUrl(url ? `${url}?t=${Date.now()}` : null)
-                }
-                return result
-              }}
-            />
-            {!profile?.id && (
-              <p className={styles.hintMuted}>Save the profile once before uploading a picture.</p>
-            )}
-          </div>
-        </div>
+        <UploadField
+          kind="profile-picture"
+          recordId={profile?.id ?? null}
+          currentPath={profile?.profile_image_path}
+          disabledReason="Save the profile once, then add a picture."
+          removable
+        />
       </section>
 
       <section className={`card ${styles.section}`}>

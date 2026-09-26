@@ -71,3 +71,13 @@
   justify-content: flex-end;
   gap: var(--sp-2);
 }
+
+.error {
+  margin: calc(var(--sp-2) * -1) 0 var(--sp-3);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-quiet, rgba(200, 40, 40, 0.08));
+  color: var(--danger);
+  font-size: var(--fs-00);
+  line-height: 1.45;
+}

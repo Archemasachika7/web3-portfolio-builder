@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useLayoutEffect, useRef } from "react"
 import { NAV_GROUPS, isUnder } from "./nav"
 import Icon from "./Icon"
@@ -15,6 +16,10 @@ export default function Sidebar({ pathname, onNavigate }: { pathname: string; on
   const groupsRef = useRef<HTMLDivElement>(null)
   const markerRef = useRef<HTMLSpanElement>(null)
   const placed = useRef(false)
+  const router = useRouter()
+  // Prefetch on intent rather than on sight: warming all sixteen links at
+  // once on every page load competed with the click you actually made.
+  const warm = (href: string) => router.prefetch(href)
 
   useLayoutEffect(() => {
     const groups = groupsRef.current
@@ -51,13 +56,15 @@ export default function Sidebar({ pathname, onNavigate }: { pathname: string; on
             {group.items.map((item) => {
               const active = isUnder(pathname, item.href)
               return (
-                <Link
+                <Link prefetch={false}
                   key={item.href}
                   href={item.href}
                   className={styles.navLink}
                   data-active={active ? "true" : "false"}
                   aria-current={active ? "page" : undefined}
                   onClick={onNavigate}
+                  onMouseEnter={() => warm(item.href)}
+                  onFocus={() => warm(item.href)}
                 >
                   <Icon name={item.icon} size={17} className={styles.navIcon} />
                   <span>{item.label}</span>

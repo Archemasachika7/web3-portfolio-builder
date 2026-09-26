@@ -1,17 +1,16 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
-import FileDropzone from "@/components/admin/FileDropzone"
+import UploadField from "@/components/admin/UploadField"
 import { useToast } from "@/components/admin/Toast"
-import { IMAGE_TYPES } from "@/lib/storageConstants"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
 import {
   createAchievement,
   updateAchievement,
   deleteAchievement,
-  reorderAchievements,
-  uploadAchievementImage
+  reorderAchievements
 } from "./actions"
 import type { AchievementWithTags } from "./actions"
 import type { Tag } from "@/shared/database.types"
@@ -24,7 +23,7 @@ export default function AchievementsClient({
   achievements: AchievementWithTags[]
   allTags: Tag[]
 }) {
-  const [items, setItems] = useState(initial)
+  const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
   const router = useRouter()
 
@@ -34,7 +33,11 @@ export default function AchievementsClient({
     if (target < 0 || target >= next.length) return
     ;[next[index], next[target]] = [next[target], next[index]]
     setItems(next)
-    await reorderAchievements(next.map((a) => a.id))
+    const result = await callAction(() => reorderAchievements(next.map((a) => a.id)))
+    if (!result.ok) {
+      setItems(items)
+      showToast(result.error ?? "Couldn't save the new order.", "error")
+    }
   }
 
   return (
@@ -44,7 +47,7 @@ export default function AchievementsClient({
           type="button"
           className="btn btn-primary"
           onClick={async () => {
-            const result = await createAchievement()
+            const result = await callAction(() => createAchievement())
             if (result.ok) router.refresh()
             else showToast(result.error ?? "Failed", "error")
           }}
@@ -76,7 +79,7 @@ export default function AchievementsClient({
               }
               onSave={(fd) => updateAchievement(a.id, fd)}
               onDelete={async () => {
-                const result = await deleteAchievement(a.id)
+                const result = await callAction(() => deleteAchievement(a.id))
                 if (result.ok) setItems((prev) => prev.filter((x) => x.id !== a.id))
                 return result
               }}
@@ -127,12 +130,7 @@ export default function AchievementsClient({
 
               <div className="field">
                 <label>Image</label>
-                <FileDropzone
-                  accept={IMAGE_TYPES.join(",")}
-                  hint="JPG / PNG / WEBP"
-                  currentLabel={a.image_path}
-                  onUpload={(file) => uploadAchievementImage(a.id, a.image_path, file)}
-                />
+                <UploadField kind="achievement-image" recordId={a.id} currentPath={a.image_path} removable />
               </div>
 
               <div className="field">

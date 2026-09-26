@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
 import ConfirmDialog, { type ConfirmDialogHandle } from "@/components/admin/ConfirmDialog"
 import { publicAssetUrl } from "@/lib/publicUrl"
 import { deleteStorageObject } from "./actions"
@@ -42,7 +43,7 @@ export default function StorageClient({
     const target = targetRef.current
     if (!target) return
     const confirmed = target.usedBy.length > 0
-    const result = await deleteStorageObject(target.path, confirmed)
+    const result = await callAction(() => deleteStorageObject(target.path, confirmed))
     if (result.ok) {
       setItems((prev) => prev.filter((o) => o.path !== target.path))
       showToast("Deleted", "success")

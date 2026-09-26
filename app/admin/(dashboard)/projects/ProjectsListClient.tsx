@@ -2,12 +2,12 @@
 
 import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import type { ProjectListItem } from "./actions"
 import { deleteProjects } from "./actions"
 import { publicAssetUrl } from "@/lib/publicUrl"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
 import ConfirmDialog, { type ConfirmDialogHandle } from "@/components/admin/ConfirmDialog"
 import styles from "./projects.module.css"
 
@@ -74,7 +74,7 @@ export default function ProjectsListClient({ projects }: { projects: ProjectList
   async function handleConfirmedDelete() {
     if (!pending) return
     setBusy(true)
-    const result = await deleteProjects(pending.ids)
+    const result = await callAction(() => deleteProjects(pending.ids))
     setBusy(false)
 
     if (result.ok) {
@@ -84,10 +84,9 @@ export default function ProjectsListClient({ projects }: { projects: ProjectList
       )
       setSelected(new Set())
       router.refresh()
-    } else {
-      showToast(result.error ?? "Delete failed", "error")
     }
-    setPending(null)
+    if (result.ok) setPending(null)
+    return result
   }
 
   const publishedInSelection = useMemo(
@@ -218,11 +217,13 @@ export default function ProjectsListClient({ projects }: { projects: ProjectList
                 </td>
                 <td>
                   {p.thumbnail_path ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={publicAssetUrl(p.thumbnail_path) ?? ""}
                       alt=""
                       width={48}
                       height={32}
+                      loading="lazy"
                       className={styles.rowThumb}
                     />
                   ) : (
@@ -230,7 +231,7 @@ export default function ProjectsListClient({ projects }: { projects: ProjectList
                   )}
                 </td>
                 <td>
-                  <Link href={`/admin/projects/${p.id}`} className={styles.rowLink}>
+                  <Link prefetch={false} href={`/admin/projects/${p.id}`} className={styles.rowLink}>
                     {p.title}
                   </Link>
                 </td>
@@ -278,14 +279,16 @@ export default function ProjectsListClient({ projects }: { projects: ProjectList
                   aria-label={`Select ${p.title}`}
                 />
               </label>
-              <Link href={`/admin/projects/${p.id}`} className={styles.cardBody}>
+              <Link prefetch={false} href={`/admin/projects/${p.id}`} className={styles.cardBody}>
                 <div className={styles.cardThumbWrap}>
                   {p.thumbnail_path ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={publicAssetUrl(p.thumbnail_path) ?? ""}
                       alt=""
-                      fill
+                      loading="lazy"
                       className={styles.cardThumb}
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
                     />
                   ) : (
                     <div className={styles.cardThumbPlaceholder}>No thumbnail</div>

@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
-import { uploadAsset, deleteAsset, IMAGE_TYPES } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import type { Education } from "@/shared/database.types"
 
@@ -13,6 +12,7 @@ export interface ActionResult {
 }
 
 export async function listEducation(): Promise<Education[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("education")
@@ -89,29 +89,6 @@ export async function reorderEducation(orderedIds: string[]): Promise<ActionResu
   if (failed?.error) return { ok: false, error: failed.error.message }
   revalidatePath("/admin/education")
   return { ok: true, error: null }
-}
-
-export async function uploadEducationLogo(
-  id: string,
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-  const result = await uploadAsset({
-    file,
-    folder: `EDUCATION/${id}`,
-    allowedTypes: IMAGE_TYPES,
-    filenameOverride: `logo.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`
-  })
-  if (result.error || !result.path) return { path: null, error: result.error }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("education").update({ logo_path: result.path }).eq("id", id)
-  if (error) return { path: null, error: "Saved file but failed to update the record." }
-
-  if (previousPath && previousPath !== result.path) await deleteAsset(previousPath)
-  revalidatePath("/admin/education")
-  return { path: result.path, error: null }
 }
 
 function nullableString(value: FormDataEntryValue | null): string | null {

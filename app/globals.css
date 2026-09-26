@@ -287,6 +287,13 @@ button.card:hover {
   cursor: not-allowed;
 }
 
+.btn-sm {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: var(--fs-000);
+  box-shadow: none;
+}
+
 .btn[data-active="true"] {
   background: var(--ink);
   border-color: var(--ink);
@@ -600,6 +607,16 @@ input[type="radio"] {
   transform: scale(1.005);
 }
 
+.dropzone[data-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.dropzone[data-disabled="true"]:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-raised);
+}
+
 .dropzone:focus-visible {
   outline: none;
   border-color: var(--accent);
@@ -706,4 +723,70 @@ input[type="radio"] {
   .btn:active:not(:disabled) {
     transform: none;
   }
+}
+
+/* ---- setup / error screens ---- */
+
+.config-error {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+}
+
+.config-error-card {
+  max-width: 560px;
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  line-height: 1.55;
+}
+
+.config-error-card p,
+.config-error-card ul {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.config-error-card code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-sunken);
+  color: var(--ink);
+}
+
+.page-error {
+  max-width: 640px;
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  line-height: 1.55;
+}
+
+.page-error p {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.page-error-title {
+  margin: 0;
+  font-size: var(--fs-1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.page-error-digest {
+  font-family: var(--font-mono);
+  font-size: var(--fs-000);
+  color: var(--ink-faint);
+}
+
+.page-error-actions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
 }

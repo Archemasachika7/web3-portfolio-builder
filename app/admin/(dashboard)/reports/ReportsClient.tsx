@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
 import { publicAssetUrl } from "@/lib/publicUrl"
 import { toggleReportPublished, deleteReport } from "./actions"
 import type { ReportWithProject } from "./actions"
 import styles from "../shared-list.module.css"
 
 export default function ReportsClient({ reports: initial }: { reports: ReportWithProject[] }) {
-  const [reports, setReports] = useState(initial)
+  const [reports, setReports] = useServerState(initial)
   const { showToast } = useToast()
 
   return (
@@ -37,7 +38,7 @@ export default function ReportsClient({ reports: initial }: { reports: ReportWit
                 <td>{r.title}</td>
                 <td>
                   {r.project_title ? (
-                    <Link href={`/admin/projects/${r.project_id}`} className={styles.previewLink}>
+                    <Link prefetch={false} href={`/admin/projects/${r.project_id}`} className={styles.previewLink}>
                       {r.project_title}
                     </Link>
                   ) : (
@@ -57,7 +58,7 @@ export default function ReportsClient({ reports: initial }: { reports: ReportWit
                   <button
                     className="btn"
                     onClick={async () => {
-                      const result = await toggleReportPublished(r.id, !r.published)
+                      const result = await callAction(() => toggleReportPublished(r.id, !r.published))
                       if (result.ok) {
                         setReports((prev) =>
                           prev.map((x) => (x.id === r.id ? { ...x, published: !x.published } : x))
@@ -72,7 +73,7 @@ export default function ReportsClient({ reports: initial }: { reports: ReportWit
                   <button
                     className="btn btn-danger"
                     onClick={async () => {
-                      const result = await deleteReport(r.id, r.file_path)
+                      const result = await callAction(() => deleteReport(r.id))
                       if (result.ok) {
                         setReports((prev) => prev.filter((x) => x.id !== r.id))
                         showToast("Deleted", "success")

@@ -1,204 +1,126 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import type { ProjectDetail } from "../actions"
-import {
-  uploadProjectImage,
-  attachProjectHeroMedia,
-  attachProjectMedia,
-  deleteProjectMedia,
-  reorderProjectMedia
-} from "../actions"
-import { useRouter } from "next/navigation"
+import { deleteProjectMedia, reorderProjectMedia } from "../actions"
 import { useToast } from "@/components/admin/Toast"
-import FileDropzone from "@/components/admin/FileDropzone"
-import MediaUploadField from "@/components/admin/MediaUploadField"
-import { IMAGE_TYPES, VIDEO_TYPES, MODEL_ACCEPT, isModelFile } from "@/lib/storageConstants"
+import UploadField from "@/components/admin/UploadField"
+import { callAction } from "@/lib/callAction"
 import { publicAssetUrl } from "@/lib/publicUrl"
 import type { ProjectMedia } from "@/shared/database.types"
 import styles from "./editor.module.css"
 
-function isVideoPath(path: string | null): boolean {
-  if (!path) return false
-  return /\.(mp4|webm)$/i.test(path)
-}
+const byOrder = (a: ProjectMedia, b: ProjectMedia) => a.display_order - b.display_order
 
 export default function MediaTab({ project }: { project: ProjectDetail }) {
   const { showToast } = useToast()
-  const router = useRouter()
-  const [thumbnailPath, setThumbnailPath] = useState(project.thumbnail_path)
-  const [heroPath, setHeroPath] = useState(project.hero_media_path)
-  const [media, setMedia] = useState<ProjectMedia[]>(project.media)
+  const [media, setMedia] = useState<ProjectMedia[]>(() => [...project.media].sort(byOrder))
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  async function move(id: string, delta: -1 | 1) {
+    const i = media.findIndex((x) => x.id === id)
+    const j = i + delta
+    if (i < 0 || j < 0 || j >= media.length || busyId) return
+    const previous = media
+    const next = [...media]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    const renumbered = next.map((m, index) => ({ ...m, display_order: index }))
+    setMedia(renumbered)
+    setBusyId(id)
+    const result = await callAction(() => reorderProjectMedia(project.id, renumbered.map((x) => x.id)))
+    setBusyId(null)
+    if (!result.ok) {
+      setMedia(previous)
+      showToast(result.error ?? "Couldn't reorder.", "error")
+    }
+  }
+
+  async function remove(id: string) {
+    if (busyId) return
+    setBusyId(id)
+    const result = await callAction(() => deleteProjectMedia(id, project.id))
+    setBusyId(null)
+    if (result.ok) {
+      setMedia((prev) => prev.filter((x) => x.id !== id))
+      showToast("Removed", "success")
+    } else {
+      showToast(result.error ?? "Delete failed", "error")
+    }
+  }
 
   return (
     <div className={styles.form}>
       <div className={styles.grid2}>
-        <div>
+        <div className="field">
           <span className="label">THUMBNAIL</span>
-          {thumbnailPath && (
-            <Image
-              src={publicAssetUrl(thumbnailPath) ?? ""}
-              alt=""
-              width={200}
-              height={130}
-              className={styles.mediaPreview}
-            />
-          )}
-          <FileDropzone
-            accept={IMAGE_TYPES.join(",")}
-            hint="JPG / PNG / WEBP, up to 8MB"
-            currentLabel={thumbnailPath}
-            onUpload={(file) =>
-              uploadProjectImage(project.id, project.slug, "thumbnail_path", thumbnailPath, file)
-            }
-            onUploaded={(path) => setThumbnailPath(path)}
-          />
+          <UploadField kind="project-thumbnail" recordId={project.id} currentPath={project.thumbnail_path} removable />
+          <span className="field-hint">Card and list image. Required to publish.</span>
         </div>
 
-        <div>
+        <div className="field">
           <span className="label">HERO MEDIA</span>
-          {heroPath &&
-            (isVideoPath(heroPath) ? (
-              <video
-                src={publicAssetUrl(heroPath) ?? ""}
-                className={styles.mediaPreview}
-                muted
-                controls
-              />
-            ) : (
-              <Image
-                src={publicAssetUrl(heroPath) ?? ""}
-                alt=""
-                width={200}
-                height={130}
-                className={styles.mediaPreview}
-              />
-            ))}
-          <MediaUploadField
-            accept={[...IMAGE_TYPES, ...VIDEO_TYPES].join(",")}
-            hint="JPG / PNG / WEBP up to 8MB, or MP4 / WEBM up to 200MB — shows real upload progress"
-            folder={`PROJECTS/${project.slug}`}
-            allowedTypesKey="image-or-video"
-            filenameOverride={(file) => `hero.${file.name.split(".").pop()?.toLowerCase() ?? "webp"}`}
-            currentLabel={heroPath}
-            onUploaded={async (path) => {
-              const result = await attachProjectHeroMedia(project.id, path, heroPath)
-              if (result.ok) {
-                setHeroPath(path)
-              } else {
-                showToast(result.error ?? "Saved file but failed to update the project record.", "error")
-              }
-            }}
-          />
+          <UploadField kind="project-hero" recordId={project.id} currentPath={project.hero_media_path} removable />
+          <span className="field-hint">Top of the project page. A still or a short loop.</span>
         </div>
       </div>
 
-      <div>
+      <div className="field">
         <span className="label">GALLERY (screenshots, diagrams, models, video loops)</span>
-        <div className={styles.mediaGrid}>
-          {media
-            .sort((a, b) => a.display_order - b.display_order)
-            .map((m, index) => (
-              <div key={m.id} className={styles.mediaItem}>
-                {m.media_type === "model" ? (
-                  // No thumbnail to show for geometry — label it instead of
-                  // feeding a .step file to next/image.
-                  <div className={styles.modelThumb}>
-                    <span className={styles.modelBadge}>
-                      {(m.storage_path.split(".").pop() ?? "3D").toUpperCase()}
-                    </span>
-                    <span className={styles.modelName}>
-                      {m.storage_path.split("/").pop()}
-                    </span>
+        {media.length > 0 && (
+          <div className={styles.mediaGrid}>
+            {media.map((m, index) => {
+              const url = publicAssetUrl(m.storage_path) ?? ""
+              return (
+                <div key={m.id} className={styles.mediaItem} data-busy={busyId === m.id ? "true" : undefined}>
+                  {m.media_type === "model" ? (
+                    <div className={styles.modelThumb}>
+                      <span className={styles.modelBadge}>{(m.storage_path.split(".").pop() ?? "3D").toUpperCase()}</span>
+                      <span className={styles.modelName}>{m.storage_path.split("/").pop()}</span>
+                    </div>
+                  ) : m.media_type === "video" ? (
+                    <video src={url} className={styles.mediaThumb} muted playsInline preload="metadata" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={url} alt={m.alt_text ?? ""} className={styles.mediaThumb} loading="lazy" />
+                  )}
+                  <div className={styles.mediaItemActions}>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      aria-label="Move earlier"
+                      disabled={index === 0 || !!busyId}
+                      onClick={() => move(m.id, -1)}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      aria-label="Move later"
+                      disabled={index === media.length - 1 || !!busyId}
+                      onClick={() => move(m.id, 1)}
+                    >
+                      ↓
+                    </button>
+                    <button type="button" className="btn btn-sm btn-danger" disabled={!!busyId} onClick={() => remove(m.id)}>
+                      {busyId === m.id ? "…" : "Delete"}
+                    </button>
                   </div>
-                ) : m.media_type === "video" ? (
-                  <video src={publicAssetUrl(m.storage_path) ?? ""} className={styles.mediaThumb} muted />
-                ) : (
-                  <Image
-                    src={publicAssetUrl(m.storage_path) ?? ""}
-                    alt={m.alt_text ?? ""}
-                    width={140}
-                    height={100}
-                    className={styles.mediaThumb}
-                  />
-                )}
-                <div className={styles.mediaItemActions}>
-                  <button
-                    type="button"
-                    className="btn"
-                    disabled={index === 0}
-                    onClick={async () => {
-                      const reordered = [...media]
-                      const sorted = reordered.sort((a, b) => a.display_order - b.display_order)
-                      const i = sorted.findIndex((x) => x.id === m.id)
-                      if (i <= 0) return
-                      ;[sorted[i - 1], sorted[i]] = [sorted[i], sorted[i - 1]]
-                      setMedia(sorted)
-                      await reorderProjectMedia(project.id, sorted.map((x) => x.id))
-                    }}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    disabled={index === media.length - 1}
-                    onClick={async () => {
-                      const sorted = [...media].sort((a, b) => a.display_order - b.display_order)
-                      const i = sorted.findIndex((x) => x.id === m.id)
-                      if (i < 0 || i >= sorted.length - 1) return
-                      ;[sorted[i + 1], sorted[i]] = [sorted[i], sorted[i + 1]]
-                      setMedia(sorted)
-                      await reorderProjectMedia(project.id, sorted.map((x) => x.id))
-                    }}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={async () => {
-                      const result = await deleteProjectMedia(m.id, project.id, m.storage_path)
-                      if (result.ok) {
-                        setMedia((prev) => prev.filter((x) => x.id !== m.id))
-                        showToast("Removed", "success")
-                      } else {
-                        showToast(result.error ?? "Delete failed", "error")
-                      }
-                    }}
-                  >
-                    Delete
-                  </button>
                 </div>
-              </div>
-            ))}
-        </div>
+              )
+            })}
+          </div>
+        )}
 
-        <div className={styles.addMediaRow}>
-          <MediaUploadField
-            accept={[...IMAGE_TYPES, ...VIDEO_TYPES, MODEL_ACCEPT].join(",")}
-            hint="Image, video or 3D model (STEP / STL / GLB / OBJ) — shows real upload progress"
-            folder={`PROJECTS/${project.slug}/media`}
-            allowedTypesKey="image-video-or-model"
-            unique
-            onUploaded={async (path, file) => {
-              // Models are matched by extension: browsers report STEP/STL
-              // with no MIME type, so file.type can't classify them.
-              const mediaType = isModelFile(file.name)
-                ? "model"
-                : VIDEO_TYPES.includes(file.type)
-                  ? "video"
-                  : "screenshot"
-              const result = await attachProjectMedia(project.id, mediaType, path)
-              if (result.ok) {
-                router.refresh()
-              } else {
-                showToast(result.error ?? "Saved file but failed to add it to the gallery.", "error")
-              }
-            }}
-          />
-        </div>
+        <UploadField
+          kind="project-media"
+          recordId={project.id}
+          multiple
+          onUploaded={(result) => {
+            const added = result.media
+            if (added) setMedia((prev) => [...prev, added])
+          }}
+        />
       </div>
     </div>
   )

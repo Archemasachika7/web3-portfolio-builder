@@ -12,6 +12,7 @@ export interface ActionResult {
 }
 
 export async function listSocialLinks(): Promise<SocialLink[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("social_links")

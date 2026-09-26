@@ -6,6 +6,7 @@ import type { ProjectDetail } from "../actions"
 import type { Tag } from "@/shared/database.types"
 import { setProjectPublished, deleteProject, checkPublishRequirements } from "../actions"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
 import ConfirmDialog, { type ConfirmDialogHandle } from "@/components/admin/ConfirmDialog"
 import OverviewTab from "./OverviewTab"
 import MediaTab from "./MediaTab"
@@ -34,33 +35,39 @@ export default function ProjectEditor({
   const deleteDialogRef = useRef<ConfirmDialogHandle>(null)
 
   async function handlePublishToggle() {
+    if (publishing) return
     setPublishing(true)
-    if (!published) {
-      const check = await checkPublishRequirements(project.id)
-      if (!check.canPublish) {
-        showToast(`Cannot publish. Missing: ${check.missing.join(", ")}`, "error")
-        setPublishing(false)
-        return
+    try {
+      if (!published) {
+        const check = await callAction(async () => ({ ok: true, error: null, ...(await checkPublishRequirements(project.id)) }))
+        if (!check.ok) {
+          showToast(check.error ?? "Couldn't check the publish requirements.", "error")
+          return
+        }
+        if ("canPublish" in check && !check.canPublish) {
+          showToast(`Can't publish yet. Missing: ${check.missing.join(", ")}`, "error")
+          return
+        }
       }
+      const result = await callAction(() => setProjectPublished(project.id, !published))
+      if (result.ok) {
+        setPublished(!published)
+        showToast(!published ? "Published" : "Unpublished", "success")
+      } else {
+        showToast(result.error ?? "Failed", "error")
+      }
+    } finally {
+      setPublishing(false)
     }
-    const result = await setProjectPublished(project.id, !published)
-    if (result.ok) {
-      setPublished(!published)
-      showToast(!published ? "Published" : "Unpublished", "success")
-    } else {
-      showToast(result.error ?? "Failed", "error")
-    }
-    setPublishing(false)
   }
 
   async function handleDelete() {
-    const result = await deleteProject(project.id)
+    const result = await callAction(() => deleteProject(project.id))
     if (result.ok) {
       showToast("Project deleted", "success")
       router.push("/admin/projects")
-    } else {
-      showToast(result.error ?? "Delete failed", "error")
     }
+    return result
   }
 
   return (
@@ -94,7 +101,7 @@ export default function ProjectEditor({
         </div>
       </div>
 
-      {!published && <ReadinessBanner projectId={project.id} refreshKey={tab} />}
+      {!published && <ReadinessBanner project={project} />}
 
       <div className={styles.tabBar} role="tablist">
         {TABS.map((t) => (

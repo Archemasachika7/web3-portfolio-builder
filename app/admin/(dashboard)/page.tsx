@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { getDashboardCounts, getRecentProjects, getDraftProjectWarnings } from "@/lib/data/dashboard"
-import { createProject } from "./projects/actions"
+import NewProjectButton from "./projects/NewProjectButton"
 import { PUBLIC_SITE_URL } from "@/lib/siteUrl"
 import Icon, { type IconName } from "@/components/admin/Icon"
 import styles from "./dashboard.module.css"
@@ -30,14 +30,8 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className={styles.quickActions}>
-          <form action={createProject}>
-            <input type="hidden" name="title" value="Untitled Project" />
-            <button type="submit" className="btn btn-primary">
-              <Icon name="plus" size={16} />
-              New project
-            </button>
-          </form>
-          <Link href="/admin/resumes" className="btn">
+          <NewProjectButton />
+          <Link prefetch={false} href="/admin/resumes" className="btn">
             <Icon name="upload" size={16} />
             Resumes
           </Link>
@@ -77,7 +71,7 @@ export default async function DashboardPage() {
             <ul className={styles.list}>
               {warnings.map((w) => (
                 <li key={w.href}>
-                  <Link href={w.href} className={styles.row}>
+                  <Link prefetch={false} href={w.href} className={styles.row}>
                     <span className={styles.warnDot} aria-hidden="true" />
                     <span className={styles.rowMain}>
                       <span className={styles.rowTitle}>{w.label}</span>
@@ -94,7 +88,7 @@ export default async function DashboardPage() {
         <section className={`card ${styles.panel}`}>
           <div className={styles.panelHead}>
             <span className="label">Recent projects</span>
-            <Link href="/admin/projects" className={styles.panelLink}>
+            <Link prefetch={false} href="/admin/projects" className={styles.panelLink}>
               View all
             </Link>
           </div>
@@ -104,7 +98,7 @@ export default async function DashboardPage() {
             <ul className={styles.list}>
               {recentProjects.map((item) => (
                 <li key={item.id}>
-                  <Link href={item.href} className={styles.row}>
+                  <Link prefetch={false} href={item.href} className={styles.row}>
                     <span className={styles.rowMain}>
                       <span className={styles.rowTitle}>{item.label}</span>
                       <span className={styles.rowMeta}>{item.meta}</span>
@@ -139,7 +133,7 @@ function StatCard({
   href: string
 }) {
   return (
-    <Link href={href} className={`card ${styles.stat}`}>
+    <Link prefetch={false} href={href} className={`card ${styles.stat}`}>
       <span className={styles.statTop}>
         <span className="label">{label}</span>
         <Icon name={icon} size={16} className={styles.statIcon} />

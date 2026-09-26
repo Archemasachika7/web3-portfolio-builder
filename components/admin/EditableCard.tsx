@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react"
 import { useToast } from "./Toast"
+import { callAction } from "@/lib/callAction"
 import ConfirmDialog, { type ConfirmDialogHandle } from "./ConfirmDialog"
 import Icon from "./Icon"
 import styles from "./EditableCard.module.css"
@@ -57,8 +58,9 @@ export default function EditableCard({
   }, [open])
 
   async function handleSubmit(formData: FormData) {
+    if (pending) return
     setPending(true)
-    const result = await onSave(formData)
+    const result = await callAction(() => onSave(formData))
     setPending(false)
     showToast(result.ok ? "Saved" : result.error ?? "Save failed", result.ok ? "success" : "error")
     if (result.ok) setOpen(false)
@@ -125,8 +127,9 @@ export default function EditableCard({
         title="Delete this entry?"
         description={deleteWarning}
         onConfirm={async () => {
-          const result = await onDelete()
-          showToast(result.ok ? "Deleted" : result.error ?? "Delete failed", result.ok ? "success" : "error")
+          const result = await callAction(onDelete)
+          if (result.ok) showToast("Deleted", "success")
+          return result
         }}
       />
     </div>

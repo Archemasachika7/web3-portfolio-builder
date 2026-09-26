@@ -3,19 +3,21 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
 import { createSocialLink, updateSocialLink, deleteSocialLink, reorderSocialLinks } from "./actions"
 import type { SocialLink } from "@/shared/database.types"
 import styles from "../shared-list.module.css"
 import tableStyles from "../tags/tags.module.css"
 
 export default function SocialLinksClient({ links: initial }: { links: SocialLink[] }) {
-  const [links, setLinks] = useState(initial)
+  const [links, setLinks] = useServerState(initial)
   const [editingId, setEditingId] = useState<string | null>(null)
   const { showToast } = useToast()
   const router = useRouter()
 
   async function handleCreate(formData: FormData) {
-    const result = await createSocialLink(formData)
+    const result = await callAction(() => createSocialLink(formData))
     if (result.ok) {
       showToast("Added", "success")
       router.refresh()
@@ -25,7 +27,7 @@ export default function SocialLinksClient({ links: initial }: { links: SocialLin
   }
 
   async function handleSave(link: SocialLink, formData: FormData) {
-    const result = await updateSocialLink(link.id, formData)
+    const result = await callAction(() => updateSocialLink(link.id, formData))
     if (result.ok) {
       setLinks((prev) =>
         prev.map((l) =>
@@ -54,7 +56,11 @@ export default function SocialLinksClient({ links: initial }: { links: SocialLin
     if (target < 0 || target >= next.length) return
     ;[next[index], next[target]] = [next[target], next[index]]
     setLinks(next)
-    await reorderSocialLinks(next.map((l) => l.id))
+    const result = await callAction(() => reorderSocialLinks(next.map((l) => l.id)))
+    if (!result.ok) {
+      setLinks(links)
+      showToast(result.error ?? "Couldn't save the new order.", "error")
+    }
   }
 
   return (
@@ -127,7 +133,7 @@ export default function SocialLinksClient({ links: initial }: { links: SocialLin
                   <button
                     className="btn btn-danger"
                     onClick={async () => {
-                      const result = await deleteSocialLink(link.id)
+                      const result = await callAction(() => deleteSocialLink(link.id))
                       if (result.ok) {
                         setLinks((prev) => prev.filter((l) => l.id !== link.id))
                         showToast("Deleted", "success")

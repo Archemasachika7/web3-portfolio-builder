@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
-import { uploadAsset, deleteAsset, RESUME_TYPES } from "@/lib/storage"
+import { deleteAsset } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import type { Resume, Tag } from "@/shared/database.types"
 
@@ -17,6 +17,7 @@ export interface ResumeWithTags extends Resume {
 }
 
 export async function listResumes(): Promise<ResumeWithTags[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("resumes")
@@ -99,34 +100,15 @@ export async function setCurrentResume(id: string): Promise<ActionResult> {
   return { ok: true, error: null }
 }
 
-export async function deleteResume(id: string, filePath: string): Promise<ActionResult> {
+export async function deleteResume(id: string): Promise<ActionResult> {
   const user = await requireAdminSession()
   const supabase = createAdminClient()
-  const { error } = await supabase.from("resumes").delete().eq("id", id)
+  const { data, error } = await supabase.from("resumes").delete().eq("id", id).select("file_path").maybeSingle()
   if (error) return { ok: false, error: error.message }
-  if (filePath) await deleteAsset(filePath)
+  if (data?.file_path) await deleteAsset(data.file_path)
   await logActivity({ entityType: "resume", entityId: id, action: "deleted", actor: user.email })
   revalidatePath("/admin/resumes")
   return { ok: true, error: null }
-}
-
-export async function uploadResumeFile(
-  id: string,
-  slug: string,
-  previousPath: string | null,
-  file: File
-): Promise<{ path: string | null; error: string | null }> {
-  await requireAdminSession()
-  const result = await uploadAsset({ file, folder: `RESUMES/${slug}`, allowedTypes: RESUME_TYPES })
-  if (result.error || !result.path) return { path: null, error: result.error }
-
-  const supabase = createAdminClient()
-  const { error } = await supabase.from("resumes").update({ file_path: result.path }).eq("id", id)
-  if (error) return { path: null, error: "Saved file but failed to update the record." }
-
-  if (previousPath && previousPath !== result.path) await deleteAsset(previousPath)
-  revalidatePath("/admin/resumes")
-  return { path: result.path, error: null }
 }
 
 function nullableString(value: FormDataEntryValue | null): string | null {

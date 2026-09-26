@@ -4,6 +4,8 @@ import { useRef, useState } from "react"
 import { createTag, updateTag, deleteTag, reorderTags } from "./actions"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
+import { useServerState } from "@/lib/useServerState"
 import ConfirmDialog, { type ConfirmDialogHandle } from "@/components/admin/ConfirmDialog"
 import type { Tag } from "@/shared/database.types"
 import styles from "./tags.module.css"
@@ -11,13 +13,13 @@ import styles from "./tags.module.css"
 export default function TagsClient({ tags: initialTags }: { tags: Tag[] }) {
   const { showToast } = useToast()
   const router = useRouter()
-  const [tags, setTags] = useState(initialTags)
+  const [tags, setTags] = useServerState(initialTags)
   const [editingId, setEditingId] = useState<string | null>(null)
   const deleteDialogRef = useRef<ConfirmDialogHandle>(null)
   const deleteTargetRef = useRef<Tag | null>(null)
 
   async function handleCreate(formData: FormData) {
-    const result = await createTag(formData)
+    const result = await callAction(() => createTag(formData))
     if (result.ok) {
       showToast("Tag created", "success")
       router.refresh()
@@ -27,7 +29,7 @@ export default function TagsClient({ tags: initialTags }: { tags: Tag[] }) {
   }
 
   async function handleSaveRow(tag: Tag, formData: FormData) {
-    const result = await updateTag(tag.id, formData)
+    const result = await callAction(() => updateTag(tag.id, formData))
     if (result.ok) {
       setTags((prev) =>
         prev.map((t) =>
@@ -55,7 +57,11 @@ export default function TagsClient({ tags: initialTags }: { tags: Tag[] }) {
     if (target < 0 || target >= next.length) return
     ;[next[index], next[target]] = [next[target], next[index]]
     setTags(next)
-    await reorderTags(next.map((t) => t.id))
+    const result = await callAction(() => reorderTags(next.map((t) => t.id)))
+    if (!result.ok) {
+      setTags(tags)
+      showToast(result.error ?? "Couldn't save the new order.", "error")
+    }
   }
 
   return (
@@ -158,7 +164,7 @@ export default function TagsClient({ tags: initialTags }: { tags: Tag[] }) {
         onConfirm={async () => {
           const target = deleteTargetRef.current
           if (!target) return
-          const result = await deleteTag(target.id)
+          const result = await callAction(() => deleteTag(target.id))
           if (result.ok) {
             setTags((prev) => prev.filter((t) => t.id !== target.id))
             showToast("Deleted", "success")

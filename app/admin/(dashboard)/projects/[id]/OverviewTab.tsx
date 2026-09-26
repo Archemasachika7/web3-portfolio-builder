@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useTransition } from "react"
 import type { ProjectDetail } from "../actions"
 import { updateProjectOverview } from "../actions"
 import { useToast } from "@/components/admin/Toast"
+import { callAction } from "@/lib/callAction"
 import styles from "./editor.module.css"
 
 export default function OverviewTab({ project }: { project: ProjectDetail }) {
@@ -12,7 +13,7 @@ export default function OverviewTab({ project }: { project: ProjectDetail }) {
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
-      const result = await updateProjectOverview(project.id, formData)
+      const result = await callAction(() => updateProjectOverview(project.id, formData))
       showToast(result.ok ? "Saved" : result.error ?? "Save failed", result.ok ? "success" : "error")
     })
   }

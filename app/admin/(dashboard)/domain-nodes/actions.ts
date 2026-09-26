@@ -26,6 +26,7 @@ function slugify(input: string): string {
 }
 
 export async function listDomainNodes(): Promise<DomainNodeWithTags[]> {
+  await requireAdminSession()
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("domain_nodes")
