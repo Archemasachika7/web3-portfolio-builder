@@ -793,10 +793,11 @@ input[type="radio"] {
 
 /* ---- new-version notice ---- */
 
+/* Top centre, under the topbar: never over form buttons or toasts. */
 .update-notice {
   position: fixed;
   left: 50%;
-  bottom: var(--sp-4);
+  top: 72px;
   transform: translateX(-50%);
   z-index: 60;
   display: flex;
@@ -818,9 +819,24 @@ input[type="radio"] {
   color: #fff;
 }
 
+.update-notice-close {
+  border: none;
+  background: none;
+  color: inherit;
+  opacity: 0.7;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.update-notice-close:hover {
+  opacity: 1;
+}
+
 @keyframes update-in {
   from {
     opacity: 0;
-    transform: translate(-50%, 8px);
+    transform: translate(-50%, -8px);
   }
 }

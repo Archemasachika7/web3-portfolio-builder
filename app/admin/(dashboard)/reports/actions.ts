@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath } from "@/lib/revalidate"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
 import { deleteAsset } from "@/lib/storage"

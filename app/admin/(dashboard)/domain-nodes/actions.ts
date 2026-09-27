@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath } from "@/lib/revalidate"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
 import { logActivity } from "@/lib/activity"
@@ -9,6 +9,7 @@ import type { DomainNode, DomainNodeLevel, Tag } from "@/shared/database.types"
 export interface ActionResult {
   ok: boolean
   error: string | null
+  id?: string
 }
 
 export interface DomainNodeWithTags extends DomainNode {
@@ -61,14 +62,16 @@ export async function createDomainNode(formData: FormData): Promise<ActionResult
   }
 
   const { count } = await supabase.from("domain_nodes").select("id", { count: "exact", head: true }).eq("level", level)
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("domain_nodes")
     .insert({ slug, label, level, published: false, sort_order: count ?? 0 })
+    .select("id")
+    .single()
 
   if (error) return { ok: false, error: error.message }
   await logActivity({ entityType: "domain_node", action: "created", actor: user.email, detail: label })
   revalidatePath("/admin/domain-nodes")
-  return { ok: true, error: null }
+  return { ok: true, error: null, id: created?.id as string | undefined }
 }
 
 export async function updateDomainNode(id: string, formData: FormData): Promise<ActionResult> {

@@ -3,17 +3,21 @@ import { cache } from "react"
 import { redirect } from "next/navigation"
 import { createClient } from "./supabase/server"
 
+export type AdminUser = { id: string; email: string | null }
+
 /**
- * The signed-in user, verified with Supabase Auth. Cached per request, so
- * the layout, the page and any data helpers share one round trip instead
- * of each asking Supabase again.
+ * The signed-in user, verified with Supabase Auth. getClaims checks the
+ * session's JWT against the project's signing keys (cached), so most saves
+ * skip the extra round trip to the Auth server that getUser makes; projects
+ * still on a shared JWT secret fall back to that request inside getClaims.
+ * Cached per request, so the layout, the page and any data helpers share it.
  */
-const getVerifiedUser = cache(async () => {
+const getVerifiedUser = cache(async (): Promise<AdminUser | null> => {
   const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-  return user
+  const { data, error } = await supabase.auth.getClaims()
+  const claims = data?.claims
+  if (error || !claims?.sub) return null
+  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null }
 })
 
 /**

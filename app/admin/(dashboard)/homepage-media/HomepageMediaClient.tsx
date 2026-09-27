@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import EditableCard from "@/components/admin/EditableCard"
 import UploadField from "@/components/admin/UploadField"
@@ -17,11 +18,15 @@ import styles from "../shared-list.module.css"
 export default function HomepageMediaClient({ sections: initial }: { sections: HomepageMedia[] }) {
   const [items, setItems] = useServerState(initial)
   const { showToast } = useToast()
+  // The entry just added opens itself, so it's obvious where to type.
+  const [newId, setNewId] = useState<string | null>(null)
   const router = useRouter()
 
   async function handleCreate(formData: FormData) {
     const result = await callAction(() => createHomepageSection(formData))
     if (result.ok) {
+      if (result.id) setNewId(result.id)
+      showToast("Added — fill in the details below", "success")
       router.refresh()
     } else {
       showToast(result.error ?? "Failed", "error")
@@ -50,6 +55,8 @@ export default function HomepageMediaClient({ sections: initial }: { sections: H
       {items.map((section) => (
         <EditableCard
           key={section.id}
+          startOpen={section.id === newId}
+          autoFocus={section.id === newId}
           summary={section.section_key}
           badge={
             <>

@@ -1,15 +1,17 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath } from "@/lib/revalidate"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdminSession } from "@/lib/auth"
 import { deleteAsset } from "@/lib/storage"
 import { logActivity } from "@/lib/activity"
 import type { Resume, Tag } from "@/shared/database.types"
+import { slugify, titleFromFileName } from "@/lib/names"
 
 export interface ActionResult {
   ok: boolean
   error: string | null
+  id?: string
 }
 
 export interface ResumeWithTags extends Resume {
@@ -47,13 +49,57 @@ export async function createResume(): Promise<ActionResult> {
     slug = `${baseSlug}-${attempt}`
   }
 
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("resumes")
     .insert({ title: "New resume", slug, file_path: "", published: false })
+    .select("id")
+    .single()
   if (error) return { ok: false, error: error.message }
   await logActivity({ entityType: "resume", action: "created", actor: user.email })
   revalidatePath("/admin/resumes")
-  return { ok: true, error: null }
+  return { ok: true, error: null, id: created?.id as string | undefined }
+}
+
+/**
+ * First step of "drop a PDF to post it": a draft named after the file.
+ * The upload fills in file_path; publishUploadedResume then puts it live.
+ */
+export async function createResumeFromFile(fileName: string): Promise<ActionResult> {
+  const user = await requireAdminSession()
+  const supabase = createAdminClient()
+  const title = titleFromFileName(String(fileName ?? ""))
+  const baseSlug = slugify(title)
+
+  const { data: taken } = await supabase.from("resumes").select("slug").like("slug", `${baseSlug}%`)
+  const used = new Set((taken ?? []).map((r) => r.slug as string))
+  let slug = baseSlug
+  for (let n = 2; used.has(slug); n++) slug = `${baseSlug}-${n}`
+
+  const { data: created, error } = await supabase
+    .from("resumes")
+    .insert({ title, slug, file_path: "", published: false })
+    .select("id")
+    .single()
+  if (error) return { ok: false, error: error.message }
+  await logActivity({ entityType: "resume", entityId: created?.id, action: "created", actor: user.email })
+  return { ok: true, error: null, id: created?.id as string | undefined }
+}
+
+/** Publishes an uploaded resume; it becomes the current one if none is. */
+export async function publishUploadedResume(id: string): Promise<ActionResult> {
+  const user = await requireAdminSession()
+  const supabase = createAdminClient()
+  const { data: current } = await supabase.from("resumes").select("id").eq("is_current", true).neq("id", id).limit(1)
+  const makeCurrent = !current || current.length === 0
+  const { error } = await supabase
+    .from("resumes")
+    .update({ published: true, ...(makeCurrent ? { is_current: true } : {}) })
+    .eq("id", id)
+    .neq("file_path", "")
+  if (error) return { ok: false, error: error.message }
+  await logActivity({ entityType: "resume", entityId: id, action: "published", actor: user.email })
+  revalidatePath("/admin/resumes")
+  return { ok: true, error: null, id }
 }
 
 export async function updateResume(id: string, formData: FormData): Promise<ActionResult> {
